@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Fantamatrimonio">
+  <meta name="theme-color" content="#faf8f2">
+  <title>Fantamatrimonio · Giuseppe & Sofia</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+
+  <style>
+    :root {
+      --gold: #c9a84c;
+      --gold-light: #e8d098;
+      --gold-pale: #f7f0dc;
+      --cream: #faf8f2;
+      --dark: #1e1a14;
+      --muted: #7a6e5f;
+      --border: #e2d9c4;
+      --white: #ffffff;
+      --success: #4a7c30;
+      --success-bg: #eef5e8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; background: var(--cream); font-family: 'Jost', sans-serif; color: var(--dark); }
+
+    /* ── LOGIN ── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem 1.5rem;
+      background: var(--cream);
+    }
+    .login-ornament { font-size: 36px; margin-bottom: 1rem; }
+    .login-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px; font-weight: 600; letter-spacing: .5px;
+      color: var(--dark); text-align: center; line-height: 1.1;
+    }
+    .login-subtitle {
+      font-size: 13px; color: var(--muted); font-weight: 300;
+      margin: 6px 0 2rem; text-align: center; letter-spacing: 1px;
+    }
+    .login-card {
+      width: 100%; max-width: 360px;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2rem 1.75rem;
+    }
+    .login-card label { font-size: 12px; color: var(--muted); letter-spacing: .5px; display: block; margin-bottom: 6px; }
+    .login-card input {
+      width: 100%; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      font-family: 'Jost', sans-serif; font-size: 15px; color: var(--dark);
+      background: var(--cream); outline: none; transition: border-color .2s;
+      margin-bottom: 1rem;
+    }
+    .login-card input:focus { border-color: var(--gold); }
+    .btn-gold {
+      width: 100%; padding: 13px;
+      background: var(--gold); color: white;
+      border: none; border-radius: 12px;
+      font-family: 'Jost', sans-serif; font-size: 15px; font-weight: 500;
+      cursor: pointer; letter-spacing: .3px; transition: background .2s, transform .1s;
+    }
+    .btn-gold:hover { background: #b8973d; }
+    .btn-gold:active { transform: scale(.98); }
+    .login-note {
+      font-size: 11px; color: var(--muted); text-align: center;
+      margin-top: 1rem; line-height: 1.5;
+    }
+
+    /* ── APP SHELL ── */
+    #app { display: none; min-height: 100vh; padding-bottom: 72px; }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: var(--white); border-bottom: 1px solid var(--border);
+      padding: 14px 1.25rem 12px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .header-left h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px; font-weight: 600; line-height: 1;
+    }
+    .header-left p { font-size: 11px; color: var(--muted); font-weight: 300; margin-top: 2px; }
+    .header-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--gold-pale); border: 1.5px solid var(--gold-light);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 600; color: var(--gold);
+    }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--white); border-top: 1px solid var(--border);
+      display: flex; padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+      z-index: 10;
+    }
+    .nav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 4px 0;
+      border: none; background: transparent; cursor: pointer;
+      font-family: 'Jost', sans-serif; font-size: 10px; color: var(--muted);
+      font-weight: 400; transition: color .15s;
+    }
+    .nav-btn.active { color: var(--gold); }
+    .nav-icon { font-size: 20px; line-height: 1; }
+
+    /* ── CONTENT ── */
+    .page { display: none; padding: 1.25rem; }
+    .page.active { display: block; }
+
+    /* ── NOTIFICATION BANNER ── */
+    .notif-banner {
+      background: var(--success-bg); border: 1px solid #c0daa0;
+      border-radius: 12px; padding: 10px 14px;
+      margin-bottom: 1.25rem; display: flex; align-items: center; gap: 10px;
+    }
+    .notif-banner.warn { background: #fff8e8; border-color: #e8d080; }
+    .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+    .notif-dot.warn { background: #c8a020; }
+    .notif-banner p { font-size: 12px; color: #2a5010; line-height: 1.4; }
+    .notif-banner.warn p { color: #7a5010; }
+
+    /* ── QUESTION CARD ── */
+    .q-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem;
+      position: relative; overflow: hidden;
+      animation: fadeUp .35s ease both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .q-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+    }
+    .q-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .q-time { font-size: 11px; color: var(--muted); }
+    .q-badge {
+      font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500;
+    }
+    .q-badge.open { background: #eef5e8; color: #3a6e1a; }
+    .q-badge.closed { background: var(--gold-pale); color: #7a5a10; }
+    .q-badge.pending { background: #f0f4ff; color: #3050a0; }
+    .q-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 17px; font-style: italic; line-height: 1.4;
+      color: var(--dark); margin-bottom: 14px;
+    }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .opt-btn {
+      padding: 11px 14px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: transparent;
+      font-family: 'Jost', sans-serif; font-size: 13px; color: var(--dark);
+      cursor: pointer; text-align: left;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: all .15s;
+    }
+    .opt-btn:hover:not(:disabled) { border-color: var(--gold); background: var(--gold-pale); }
+    .opt-btn.selected { border-color: var(--gold); background: var(--gold-pale); font-weight: 500; }
+    .opt-btn.correct { border-color: #4a7c30; background: #eef5e8; color: #2a5010; }
+    .opt-btn.wrong { border-color: #ddd; background: #f8f8f8; color: #aaa; }
+    .opt-btn:disabled { cursor: default; }
+    .opt-right { display: flex; align-items: center; gap: 8px; }
+    .bar-wrap { width: 60px; height: 5px; background: #ece8de; border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 3px; background: var(--gold); transition: width .7s ease; }
+    .pct { font-size: 11px; color: var(--muted); min-width: 28px; text-align: right; }
+    .voted-msg { text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px; font-style: italic; }
+    .points-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--gold-pale); border: 1px solid var(--gold-light);
+      border-radius: 20px; font-size: 12px; padding: 4px 12px;
+      color: #7a5a10; font-weight: 500; margin-top: 10px;
+    }
+
+    /* LOCKED CARD */
+    .q-locked {
+      background: var(--cream); border: 1px dashed var(--border);
+      border-radius: 16px; padding: 1rem 1.25rem; margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 12px; opacity: .75;
+    }
+    .q-locked-icon { font-size: 22px; flex-shrink: 0; }
+    .q-locked-text p { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+    .q-locked-text span {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic; font-size: 15px; color: var(--muted);
+    }
+
+    /* ── LEADERBOARD ── */
+    .lb-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden; margin-bottom: 1rem;
+    }
+    .lb-head {
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+    }
+    .lb-head h2 {
+      font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600;
+    }
+    .lb-head p { font-size: 12px; color: var(--muted); font-weight: 300; margin-top: 2px; }
+    .lb-row {
+      display: flex; align-items: center; padding: .85rem 1.25rem;
+      border-bottom: .5px solid var(--border); transition: background .1s;
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-row.me { background: var(--gold-pale); }
+    .lb-rank { font-size: 13px; font-weight: 500; min-width: 28px; color: var(--muted); }
+    .lb-medal { font-size: 20px; min-width: 28px; }
+    .lb-info { flex: 1; margin-left: 8px; }
+    .lb-name { font-size: 14px; font-weight: 400; display: flex; align-items: center; gap: 6px; }
+    .lb-name .you { font-size: 10px; background: var(--gold); color: white; border-radius: 10px; padding: 1px 7px; font-weight: 500; }
+    .lb-sub { font-size: 11px; color: var(--muted); font-weight: 300; margin-top: 1px; }
+    .lb-bar { height: 3px; background: #ece8de; border-radius: 2px; margin-top: 4px; }
+    .lb-bar-fill { height: 100%; border-radius: 2px; background: var(--gold-light); }
+    .lb-pts {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px; font-weight: 600; color: var(--gold);
+    }
+
+    /* ── PROFILO ── */
+    .profile-hero {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.5rem 1.25rem; text-align: center; margin-bottom: 1rem;
+    }
+    .profile-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--gold-pale); border: 2px solid var(--gold-light);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600;
+      color: var(--gold); margin: 0 auto 12px;
+    }
+    .profile-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; }
+    .profile-sub { font-size: 12px; color: var(--muted); font-weight: 300; margin-top: 3px; }
+    .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 1rem; }
+    .stat-box { background: var(--cream); border-radius: 12px; padding: 12px 8px; text-align: center; }
+    .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; color: var(--dark); }
+    .stat-lbl { font-size: 10px; color: var(--muted); font-weight: 300; margin-top: 2px; }
+    .section-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1rem 1.25rem; margin-bottom: 1rem;
+    }
+    .section-card h3 { font-size: 11px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+    .toggle-row + .toggle-row { margin-top: 10px; }
+    .toggle-row span { font-size: 13px; }
+    .toggle { width: 40px; height: 24px; border-radius: 12px; background: var(--success); cursor: pointer; position: relative; border: none; }
+    .toggle-dot { width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 3px; right: 3px; transition: right .2s; }
+    .toggle.off { background: #ddd; }
+    .toggle.off .toggle-dot { right: auto; left: 3px; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .empty-state .emoji { font-size: 40px; margin-bottom: 10px; }
+    .empty-state p { font-size: 14px; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-ornament">💍</div>
+  <h1 class="login-title">Giuseppe<br>&amp; Sofia</h1>
+  <p class="login-subtitle">✦ &nbsp;Fantamatrimonio &nbsp;✦</p>
+  <div class="login-card">
+    <label>IL TUO NOME</label>
+    <input type="text" id="login-name" placeholder="Es. Mario Rossi" autocomplete="name">
+    <label>TAVOLO (opzionale)</label>
+    <input type="text" id="login-table" placeholder="Es. Tavolo 5">
+    <button class="btn-gold" onclick="doLogin()">Entra nel gioco →</button>
+    <p class="login-note">Inserisci il tuo nome così apparirai in classifica.<br>Nessuna password richiesta.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header class="app-header">
+    <div class="header-left">
+      <h1>💍 Giuseppe &amp; Sofia</h1>
+      <p id="header-sub">Fantamatrimonio · 2026</p>
+    </div>
+    <div class="header-avatar" id="header-avatar">?</div>
+  </header>
+
+  <!-- PAGE: DOMANDE -->
+  <div class="page active" id="page-domande">
+    <div id="notif-area"></div>
+    <div id="questions-list">
+      <div class="empty-state"><div class="emoji">⏳</div><p>Le domande appariranno durante la giornata…</p></div>
+    </div>
+  </div>
+
+  <!-- PAGE: CLASSIFICA -->
+  <div class="page" id="page-classifica">
+    <div class="lb-card">
+      <div class="lb-head">
+        <h2>Classifica</h2>
+        <p id="lb-subtitle">Aggiornata in tempo reale</p>
+      </div>
+      <div id="lb-list"><div class="empty-state"><div class="emoji">🏆</div><p>La classifica si aggiorna man mano che arrivano i punti…</p></div></div>
+    </div>
+  </div>
+
+  <!-- PAGE: PROFILO -->
+  <div class="page" id="page-profilo">
+    <div class="profile-hero">
+      <div class="profile-avatar" id="prof-avatar">?</div>
+      <div class="profile-name" id="prof-name">—</div>
+      <div class="profile-sub" id="prof-sub">—</div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-num" id="stat-pts">0</div><div class="stat-lbl">punti</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-correct">0</div><div class="stat-lbl">risposte ok</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-rank">#—</div><div class="stat-lbl">posizione</div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <h3>Notifiche</h3>
+      <div class="toggle-row">
+        <span>Nuove domande</span>
+        <button class="toggle" id="notif-toggle" onclick="toggleNotif()"><div class="toggle-dot"></div></button>
+      </div>
+      <div class="toggle-row">
+        <span>Classifica finale</span>
+        <button class="toggle" id="ranking-toggle"><div class="toggle-dot"></div></button>
+      </div>
+    </div>
+    <div class="section-card">
+      <h3>Account</h3>
+      <div class="toggle-row">
+        <span style="font-size:13px;color:var(--muted)">Connesso come <strong id="prof-connected">—</strong></span>
+        <button onclick="doLogout()" style="font-size:12px;color:#c44;border:1px solid #ecc;background:transparent;padding:4px 10px;border-radius:8px;cursor:pointer;font-family:'Jost',sans-serif">Esci</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="showPage('domande',this)">
+      <span class="nav-icon">❓</span>Domande
+    </button>
+    <button class="nav-btn" onclick="showPage('classifica',this)">
+      <span class="nav-icon">🏆</span>Classifica
+    </button>
+    <button class="nav-btn" onclick="showPage('profilo',this)">
+      <span class="nav-icon">👤</span>Profilo
+    </button>
+  </nav>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  FIREBASE CONFIG — sostituisci con i tuoi valori
+// ════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyCmrLyzKYtZraDtWoU3KGaqOFVV4wKUWCs",
+  authDomain: "frantamatrimonio.firebaseapp.com",
+  projectId: "frantamatrimonio",
+  storageBucket: "frantamatrimonio.firebasestorage.app",
+  messagingSenderId: "225931901296",
+  appId: "1:225931901296:web:05cb2996263bbb5dce77b5"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ════════════════════════════════════════════════
+//  DOMANDE (orari in formato HH:MM)
+// ════════════════════════════════════════════════
+const QUESTIONS = [
+  { id:'q01', text:'Quante volte Sofia cambierà outfit durante il giorno?', options:['Solo l\'abito da sposa','2 outfit','3 o più'], time:'10:00' },
+  { id:'q02', text:'Il discorso del testimone farà piangere o ridere di più?', options:['Soprattutto piangere','Soprattutto ridere','Metà e metà'], time:'14:05' },
+  { id:'q03', text:'Qualcuno rovescerà qualcosa sul vestito?', options:['Sì, uno sposo','Sì, un invitato','No, nessun incidente'], time:'14:30' },
+  { id:'q04', text:'La sposa arriverà in ritardo alla cerimonia?', options:['Sì, in ritardo','No, puntuale','Anticipa tutti'], time:'15:50' },
+  { id:'q05', text:'Chi piangerà per primo tra gli sposi?', options:['Giuseppe','Sofia','Entrambi insieme'], time:'15:00' },
+  { id:'q06', text:'L\'anello andrà al dito al primo colpo?', options:['Sì, liscio','No, un po\' di fatica'], time:'15:30' },
+  { id:'q07', text:'Quante portate prima che qualcuno si alzi a ballare?', options:['Già all\'antipasto','Al primo','Al secondo','Al dolce'], time:'15:00' },
+  { id:'q08', text:'Quale parente ballerà in modo più epico?', options:['Uno zio','Un nonno','Il papà di Giuseppe','Il papà di Sofia'], time:'20:00' },
+  { id:'q09', text:'Qualcuno si toglierà le scarpe entro le 22?', options:['Sì, prima delle 22','Sì, dopo le 22','No, resistono tutti'], time:'21:00' },
+  { id:'q10', text:'Il DJ replicherà almeno una canzone due volte?', options:['Sì','No'], time:'21:00' },
+  { id:'q11', text:'Ci sarà almeno un ballo di gruppo (Macarena, YMCA…)?', options:['Sì','No, niente balli di gruppo'], time:'21:30' },
+  { id:'q12', text:'Qual è la prima cosa che faranno gli sposi appena soli?', options:['Mangiano qualcosa','Crollano a dormire','Si mettono a ballare','Guardano le foto'], time:'23:00' },
+  { id:'q13', text:'Chi dei due si ricorderà più dettagli del matrimonio il giorno dopo?', options:['Giuseppe','Sofia','Pari pari'], time:'23:30' },
+];
+
+// ════════════════════════════════════════════════
+//  STATO LOCALE
+// ════════════════════════════════════════════════
+let currentUser = null;
+let userVotes   = {};   // qid -> opzione scelta
+let qStates     = {};   // qid -> { votes:{opt:count}, correct:string|null, points:10 }
+let allScores   = [];   // [{name,pts,correct}]
+let notifEnabled = false;
+
+// ════════════════════════════════════════════════
+//  LOGIN
+// ════════════════════════════════════════════════
+function doLogin() {
+  const name  = document.getElementById('login-name').value.trim();
+  const table = document.getElementById('login-table').value.trim();
+  if (!name) { alert('Inserisci il tuo nome per continuare!'); return; }
+
+  currentUser = { name, table, id: name.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now().toString(36) };
+  localStorage.setItem('fm_user', JSON.stringify(currentUser));
+
+  db.collection('users').doc(currentUser.id).set({ name, table, pts: 0, correct: 0, joinedAt: new Date() }, { merge: true });
+
+  initApp();
+}
+
+function doLogout() {
+  localStorage.removeItem('fm_user');
+  location.reload();
+}
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('fm_user');
+  if (saved) { currentUser = JSON.parse(saved); initApp(); }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(console.warn);
+  }
+});
+
+function initApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  const initials = currentUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('header-avatar').textContent = initials;
+  document.getElementById('header-sub').textContent = currentUser.table ? `Tavolo ${currentUser.table}` : 'Fantamatrimonio';
+  document.getElementById('prof-avatar').textContent = initials;
+  document.getElementById('prof-name').textContent = currentUser.name;
+  document.getElementById('prof-sub').textContent = currentUser.table ? `Tavolo ${currentUser.table}` : 'Invitato/a';
+  document.getElementById('prof-connected').textContent = currentUser.name;
+
+  loadMyVotes();
+  listenQuestions();
+  listenLeaderboard();
+  checkNotifPermission();
+  setInterval(renderQuestions, 30000); // ricontrolla ogni 30 sec
+}
+
+// ════════════════════════════════════════════════
+//  CARICA VOTI UTENTE
+// ════════════════════════════════════════════════
+function loadMyVotes() {
+  db.collection('votes').where('userId','==',currentUser.id).get().then(snap => {
+    snap.forEach(doc => { userVotes[doc.data().qid] = doc.data().option; });
+    renderQuestions();
+  });
+}
+
+// ════════════════════════════════════════════════
+//  ASCOLTA STATO DOMANDE IN REALTIME
+// ════════════════════════════════════════════════
+function listenQuestions() {
+  db.collection('questions').onSnapshot(snap => {
+    snap.forEach(doc => { qStates[doc.id] = doc.data(); });
+    renderQuestions();
+  });
+}
+
+// ════════════════════════════════════════════════
+//  RENDERING DOMANDE
+// ════════════════════════════════════════════════
+function isUnlocked(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const now = new Date();
+  return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
+}
+
+function renderQuestions() {
+  const container = document.getElementById('questions-list');
+  const unlocked  = QUESTIONS.filter(q => isUnlocked(q.time));
+  const locked    = QUESTIONS.filter(q => !isUnlocked(q.time));
+
+  if (unlocked.length === 0 && locked.length === 0) return;
+
+  let html = '';
+
+  unlocked.sort((a,b) => a.time.localeCompare(b.time)).forEach(q => {
+    const state   = qStates[q.id] || {};
+    const myVote  = userVotes[q.id];
+    const correct = state.correct || null;
+    const totalVotes = state.votes ? Object.values(state.votes).reduce((a,b)=>a+b,0) : 0;
+    const isClosed = !!correct;
+
+    html += `<div class="q-card">
+      <div class="q-meta">
+        <span class="q-time">⏰ ore ${q.time}</span>
+        <span class="q-badge ${isClosed ? 'closed' : 'open'}">${isClosed ? 'Risposta rivelata' : 'Aperta'}</span>
+      </div>
+      <p class="q-text">"${q.text}"</p>
+      <div class="options">`;
+
+    q.options.forEach(opt => {
+      const votes   = (state.votes && state.votes[opt]) || 0;
+      const pct     = totalVotes > 0 ? Math.round(votes / totalVotes * 100) : 0;
+      const isMyVote   = myVote === opt;
+      const isCorrect  = correct === opt;
+      const isWrong    = isClosed && isMyVote && !isCorrect;
+
+      let cls = '';
+      if (isClosed && isCorrect) cls = 'correct';
+      else if (isClosed && isWrong) cls = 'wrong';
+      else if (!isClosed && isMyVote) cls = 'selected';
+
+      const disabled = myVote || isClosed ? 'disabled' : '';
+      const onclick  = (!myVote && !isClosed) ? `onclick="castVote('${q.id}','${opt.replace(/'/g,"\\'")}',this)"` : '';
+
+      html += `<button class="opt-btn ${cls}" ${disabled} ${onclick}>
+        <span>${opt}${isCorrect ? ' ✓' : ''}</span>
+        <span class="opt-right">
+          ${(myVote || isClosed) ? `<span class="bar-wrap"><span class="bar-fill" style="width:${pct}%"></span></span><span class="pct">${pct}%</span>` : ''}
+        </span>
+      </button>`;
+    });
+
+    html += `</div>`;
+    if (myVote && !isClosed) html += `<p class="voted-msg">Risposta salvata! Il risultato arriverà dopo ✨</p>`;
+    if (isClosed && myVote === correct) html += `<div class="points-pill">🏆 +10 punti guadagnati!</div>`;
+    if (isClosed && myVote && myVote !== correct) html += `<div class="points-pill" style="background:#f5f5f5;border-color:#ddd;color:#999">Risposta errata — meglio alla prossima!</div>`;
+    html += `</div>`;
+  });
+
+  // Domande bloccate
+  if (locked.length > 0) {
+    locked.sort((a,b) => a.time.localeCompare(b.time)).forEach(q => {
+      html += `<div class="q-locked">
+        <div class="q-locked-icon">🔒</div>
+        <div class="q-locked-text">
+          <p>Disponibile alle ore ${q.time}</p>
+          <span>"${q.text}"</span>
+        </div>
+      </div>`;
+    });
+  }
+
+  container.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════
+//  VOTO
+// ════════════════════════════════════════════════
+function castVote(qid, option, btn) {
+  if (userVotes[qid]) return;
+  userVotes[qid] = option;
+
+  // Salva voto su Firestore
+  db.collection('votes').add({ userId: currentUser.id, userName: currentUser.name, qid, option, votedAt: new Date() });
+
+  // Aggiorna conteggio nella domanda
+  const field = `votes.${option}`;
+  db.collection('questions').doc(qid).set(
+    { votes: { [option]: firebase.firestore.FieldValue.increment(1) } },
+    { merge: true }
+  );
+
+  renderQuestions();
+}
+
+// ════════════════════════════════════════════════
+//  CLASSIFICA REALTIME
+// ════════════════════════════════════════════════
+function listenLeaderboard() {
+  db.collection('users').orderBy('pts','desc').onSnapshot(snap => {
+    allScores = [];
+    snap.forEach(doc => allScores.push({ id: doc.id, ...doc.data() }));
+    renderLeaderboard();
+    updateProfile();
+  });
+}
+
+function renderLeaderboard() {
+  const medals = ['🥇','🥈','🥉'];
+  const total  = QUESTIONS.length;
+  const lb     = document.getElementById('lb-list');
+  document.getElementById('lb-subtitle').textContent = `${allScores.length} invitati · ${total} domande`;
+
+  if (allScores.length === 0) {
+    lb.innerHTML = `<div class="empty-state"><div class="emoji">🏆</div><p>Nessun punteggio ancora…</p></div>`;
+    return;
+  }
+
+  lb.innerHTML = allScores.map((u, i) => {
+    const isMe = u.id === currentUser.id;
+    const maxPts = allScores[0].pts || 1;
+    const barW = maxPts > 0 ? Math.round((u.pts / maxPts) * 100) : 0;
+    return `<div class="lb-row ${isMe ? 'me' : ''}">
+      ${i < 3 ? `<span class="lb-medal">${medals[i]}</span>` : `<span class="lb-rank">${i+1}°</span>`}
+      <div class="lb-info" style="margin-left:${i<3?'0':'8px'}">
+        <div class="lb-name">${u.name}${isMe ? '<span class="you">tu</span>' : ''}</div>
+        <div class="lb-sub">${u.correct||0} risposte corrette${u.table ? ' · '+u.table : ''}</div>
+        <div class="lb-bar"><div class="lb-bar-fill" style="width:${barW}%"></div></div>
+      </div>
+      <span class="lb-pts">${u.pts||0}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateProfile() {
+  const me = allScores.find(u => u.id === currentUser.id);
+  if (!me) return;
+  const rank = allScores.findIndex(u => u.id === currentUser.id) + 1;
+  document.getElementById('stat-pts').textContent = me.pts || 0;
+  document.getElementById('stat-correct').textContent = `${me.correct||0}/${QUESTIONS.length}`;
+  document.getElementById('stat-rank').textContent = `#${rank}`;
+}
+
+// ════════════════════════════════════════════════
+//  NAVIGAZIONE
+// ════════════════════════════════════════════════
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ════════════════════════════════════════════════
+//  NOTIFICHE
+// ════════════════════════════════════════════════
+function checkNotifPermission() {
+  const area = document.getElementById('notif-area');
+  notifEnabled = Notification.permission === 'granted';
+  updateToggleUI();
+
+  if (Notification.permission === 'default') {
+    area.innerHTML = `<div class="notif-banner warn">
+      <div class="notif-dot warn"></div>
+      <p><strong>Attiva le notifiche</strong> per ricevere un avviso quando arriva una nuova domanda!</p>
+      <button onclick="requestNotif()" style="flex-shrink:0;margin-left:auto;background:var(--gold);color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:'Jost',sans-serif">Attiva</button>
+    </div>`;
+  } else if (notifEnabled) {
+    area.innerHTML = `<div class="notif-banner">
+      <div class="notif-dot"></div>
+      <p><strong>Notifiche attive</strong> — ti avviseremo ad ogni nuova domanda</p>
+    </div>`;
+    setTimeout(() => { area.innerHTML = ''; }, 4000);
+  }
+}
+
+function requestNotif() {
+  Notification.requestPermission().then(p => {
+    notifEnabled = p === 'granted';
+    updateToggleUI();
+    checkNotifPermission();
+    if (notifEnabled) {
+      db.collection('users').doc(currentUser.id).update({ notifEnabled: true });
+    }
+  });
+}
+
+function toggleNotif() {
+  if (!notifEnabled) requestNotif();
+}
+
+function updateToggleUI() {
+  const t = document.getElementById('notif-toggle');
+  if (notifEnabled) t.classList.remove('off'); else t.classList.add('off');
+}
+</script>
+</body>
+</html>

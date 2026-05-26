@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin · Fantamatrimonio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <style>
+    :root { --gold:#c9a84c; --cream:#faf8f2; --dark:#1e1a14; --muted:#7a6e5f; --border:#e2d9c4; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--cream); font-family:'Jost',sans-serif; color:var(--dark); padding:1.5rem; min-height:100vh; }
+    h1 { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; margin-bottom:4px; }
+    .sub { font-size:13px; color:var(--muted); margin-bottom:2rem; }
+
+    /* LOGIN ADMIN */
+    #admin-login { max-width:340px; margin:4rem auto; text-align:center; }
+    #admin-login input {
+      width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:10px;
+      font-family:'Jost',sans-serif; font-size:15px; background:white; color:var(--dark);
+      outline:none; margin-bottom:12px;
+    }
+    .btn { padding:10px 20px; border-radius:10px; border:none; cursor:pointer; font-family:'Jost',sans-serif; font-size:14px; font-weight:500; }
+    .btn-gold { background:var(--gold); color:white; }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--dark); }
+    .btn:hover { opacity:.88; }
+    .btn:active { transform:scale(.98); }
+
+    #admin-panel { display:none; max-width:700px; margin:0 auto; }
+
+    .q-admin {
+      background:white; border:1px solid var(--border); border-radius:14px;
+      padding:1.25rem; margin-bottom:1rem;
+    }
+    .q-admin-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+    .q-admin-title { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:16px; line-height:1.4; flex:1; margin-right:12px; }
+    .q-time-badge { font-size:11px; background:var(--cream); border:1px solid var(--border); border-radius:20px; padding:3px 9px; white-space:nowrap; }
+    .q-status { font-size:11px; font-weight:500; margin-bottom:10px; }
+    .q-status.open { color:#3a7010; }
+    .q-status.locked { color:#7a6e5f; }
+    .q-status.solved { color:#7a5010; }
+    .opt-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+    .opt-label { flex:1; font-size:13px; }
+    .opt-count { font-size:12px; color:var(--muted); min-width:50px; }
+    .opt-bar-wrap { width:80px; height:5px; background:#ece8de; border-radius:3px; overflow:hidden; }
+    .opt-bar { height:100%; background:var(--gold); border-radius:3px; }
+    .btn-correct {
+      padding:5px 12px; border-radius:8px; border:1px solid var(--border);
+      background:transparent; font-family:'Jost',sans-serif; font-size:12px; cursor:pointer;
+      transition:all .15s; color:var(--dark);
+    }
+    .btn-correct:hover { border-color:#4a7c30; background:#eef5e8; color:#2a5010; }
+    .btn-correct.active { background:#eef5e8; border-color:#4a7c30; color:#2a5010; font-weight:500; }
+    .confirm-btn {
+      width:100%; padding:10px; margin-top:12px;
+      background:#2a5010; color:white; border:none; border-radius:10px;
+      font-family:'Jost',sans-serif; font-size:13px; font-weight:500; cursor:pointer;
+    }
+    .confirm-btn:disabled { background:#ccc; cursor:not-allowed; }
+    .confirm-btn:hover:not(:disabled) { background:#1e3a0c; }
+
+    .solved-badge { display:inline-block; background:#eef5e8; color:#2a5010; border:1px solid #b0d890; border-radius:20px; font-size:12px; padding:4px 12px; margin-top:8px; }
+
+    .stats-bar { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:2rem; }
+    .stat-box { background:white; border:1px solid var(--border); border-radius:12px; padding:14px; text-align:center; }
+    .stat-n { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; color:var(--gold); }
+    .stat-l { font-size:11px; color:var(--muted); margin-top:2px; }
+
+    .notif-section { background:white; border:1px solid var(--border); border-radius:14px; padding:1.25rem; margin-bottom:1.5rem; }
+    .notif-section h3 { font-size:13px; font-weight:500; margin-bottom:10px; }
+    .notif-form { display:flex; gap:8px; flex-wrap:wrap; }
+    .notif-form input { flex:1; min-width:200px; padding:9px 12px; border:1px solid var(--border); border-radius:9px; font-family:'Jost',sans-serif; font-size:13px; background:var(--cream); color:var(--dark); outline:none; }
+    .notif-form select { padding:9px 12px; border:1px solid var(--border); border-radius:9px; font-family:'Jost',sans-serif; font-size:13px; background:var(--cream); color:var(--dark); }
+
+    .tab-bar { display:flex; gap:8px; margin-bottom:1.5rem; }
+
+    /* Classifica admin */
+    .lb-row { display:flex; align-items:center; padding:.7rem 0; border-bottom:.5px solid var(--border); }
+    .lb-row:last-child { border-bottom:none; }
+  </style>
+</head>
+<body>
+
+<div id="admin-login">
+  <h1>Admin 🔐</h1>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:1.5rem">Accesso riservato agli sposi</p>
+  <input type="password" id="admin-pw" placeholder="Password admin" onkeydown="if(event.key==='Enter')checkPw()">
+  <button class="btn btn-gold" style="width:100%" onclick="checkPw()">Accedi</button>
+</div>
+
+<div id="admin-panel">
+  <h1>💍 Pannello Admin</h1>
+  <p class="sub">Giuseppe &amp; Sofia · Fantamatrimonio</p>
+
+  <div class="stats-bar">
+    <div class="stat-box"><div class="stat-n" id="st-users">0</div><div class="stat-l">invitati</div></div>
+    <div class="stat-box"><div class="stat-n" id="st-votes">0</div><div class="stat-l">voti totali</div></div>
+    <div class="stat-box"><div class="stat-n" id="st-solved">0</div><div class="stat-l">domande risolte</div></div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="btn btn-gold" onclick="showTab('questions')">Domande</button>
+    <button class="btn btn-outline" onclick="showTab('ranking')">Classifica</button>
+  </div>
+
+  <div id="tab-questions">
+    <div id="admin-q-list"></div>
+  </div>
+
+  <div id="tab-ranking" style="display:none">
+    <div style="background:white;border:1px solid var(--border);border-radius:14px;padding:1.25rem">
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:18px;margin-bottom:1rem">Classifica completa</h3>
+      <div id="admin-lb"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ CONFIG ══ (stesso file index.html)
+const firebaseConfig = {
+  apiKey: "AIzaSyCmrLyzKYtZraDtWoU3KGaqOFVV4wKUWCs",
+  authDomain: "frantamatrimonio.firebaseapp.com",
+  projectId: "frantamatrimonio",
+  storageBucket: "frantamatrimonio.firebasestorage.app",
+  messagingSenderId: "225931901296",
+  appId: "1:225931901296:web:05cb2996263bbb5dce77b5"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ══ PASSWORD ADMIN — cambia questa! ══
+const ADMIN_PASSWORD = 'Giuseppesofiasposi';
+
+const QUESTIONS = [
+  { id:'q01', text:'Quante volte Sofia cambierà outfit durante il giorno?', options:['Solo l\'abito da sposa','2 outfit','3 o più'], time:'10:00' },
+  { id:'q02', text:'Il discorso del testimone farà piangere o ridere di più?', options:['Soprattutto piangere','Soprattutto ridere','Metà e metà'], time:'14:05' },
+  { id:'q03', text:'Qualcuno rovescerà qualcosa sul vestito?', options:['Sì, uno sposo','Sì, un invitato','No, nessun incidente'], time:'14:30' },
+  { id:'q04', text:'La sposa arriverà in ritardo alla cerimonia?', options:['Sì, in ritardo','No, puntuale','Anticipa tutti'], time:'15:50' },
+  { id:'q05', text:'Chi piangerà per primo tra gli sposi?', options:['Giuseppe','Sofia','Entrambi insieme'], time:'15:00' },
+  { id:'q06', text:'L\'anello andrà al dito al primo colpo?', options:['Sì, liscio','No, un po\' di fatica'], time:'15:30' },
+  { id:'q07', text:'Quante portate prima che qualcuno si alzi a ballare?', options:['Già all\'antipasto','Al primo','Al secondo','Al dolce'], time:'15:00' },
+  { id:'q08', text:'Quale parente ballerà in modo più epico?', options:['Uno zio','Un nonno','Il papà di Giuseppe','Il papà di Sofia'], time:'20:00' },
+  { id:'q09', text:'Qualcuno si toglierà le scarpe entro le 22?', options:['Sì, prima delle 22','Sì, dopo le 22','No, resistono tutti'], time:'21:00' },
+  { id:'q10', text:'Il DJ replicherà almeno una canzone due volte?', options:['Sì','No'], time:'21:00' },
+  { id:'q11', text:'Ci sarà almeno un ballo di gruppo (Macarena, YMCA…)?', options:['Sì','No, niente balli di gruppo'], time:'21:30' },
+  { id:'q12', text:'Qual è la prima cosa che faranno gli sposi appena soli?', options:['Mangiano qualcosa','Crollano a dormire','Si mettono a ballare','Guardano le foto'], time:'23:00' },
+  { id:'q13', text:'Chi dei due si ricorderà più dettagli del matrimonio il giorno dopo?', options:['Giuseppe','Sofia','Pari pari'], time:'23:30' },
+];
+
+let qStates = {};
+let allUsers = [];
+let selectedAnswers = {}; // qid -> opzione selezionata prima di confermare
+
+function checkPw() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw === ADMIN_PASSWORD) {
+    document.getElementById('admin-login').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    initAdmin();
+  } else {
+    alert('Password errata!');
+  }
+}
+
+function initAdmin() {
+  db.collection('questions').onSnapshot(snap => {
+    snap.forEach(doc => { qStates[doc.id] = doc.data(); });
+    renderAdminQuestions();
+    updateStats();
+  });
+  db.collection('users').orderBy('pts','desc').onSnapshot(snap => {
+    allUsers = [];
+    snap.forEach(doc => allUsers.push({ id: doc.id, ...doc.data() }));
+    renderAdminLb();
+    document.getElementById('st-users').textContent = allUsers.length;
+  });
+  db.collection('votes').onSnapshot(snap => {
+    document.getElementById('st-votes').textContent = snap.size;
+  });
+}
+
+function updateStats() {
+  const solved = Object.values(qStates).filter(q => q.correct).length;
+  document.getElementById('st-solved').textContent = `${solved}/${QUESTIONS.length}`;
+}
+
+function renderAdminQuestions() {
+  const container = document.getElementById('admin-q-list');
+  container.innerHTML = QUESTIONS.map(q => {
+    const state = qStates[q.id] || {};
+    const correct = state.correct;
+    const votes = state.votes || {};
+    const total = Object.values(votes).reduce((a,b)=>a+b,0);
+
+    const optsHtml = q.options.map(opt => {
+      const cnt = votes[opt] || 0;
+      const pct = total > 0 ? Math.round(cnt/total*100) : 0;
+      const isCorrect = correct === opt;
+      const isSel = selectedAnswers[q.id] === opt;
+      return `<div class="opt-row">
+        <span class="opt-label">${opt}</span>
+        <span class="opt-count">${cnt} voti (${pct}%)</span>
+        <div class="opt-bar-wrap"><div class="opt-bar" style="width:${pct}%"></div></div>
+        ${!correct ? `<button class="btn-correct ${isSel?'active':''}" onclick="selectAnswer('${q.id}','${opt.replace(/'/g,"\\'")}')">
+          ${isSel ? '✓ Selezionata' : 'È la risposta'}
+        </button>` : ''}
+      </div>`;
+    }).join('');
+
+    const statusHtml = correct
+      ? `<p class="q-status solved">✅ Risposta rivelata: "${correct}"</p>`
+      : `<p class="q-status ${isUnlocked(q.time)?'open':'locked'}">${isUnlocked(q.time) ? '🟢 Aperta agli invitati' : '🔒 Non ancora visibile'}</p>`;
+
+    return `<div class="q-admin">
+      <div class="q-admin-head">
+        <div class="q-admin-title">"${q.text}"</div>
+        <span class="q-time-badge">⏰ ${q.time}</span>
+      </div>
+      ${statusHtml}
+      ${optsHtml}
+      ${!correct ? `<button class="confirm-btn" id="cfm-${q.id}" ${!selectedAnswers[q.id]?'disabled':''} onclick="confirmAnswer('${q.id}')">
+        Conferma risposta e assegna punti
+      </button>` : `<div class="solved-badge">🏆 Punti già assegnati a chi ha risposto "${correct}"</div>`}
+    </div>`;
+  }).join('');
+}
+
+function isUnlocked(t) {
+  const [h,m] = t.split(':').map(Number);
+  const now = new Date();
+  return now.getHours() > h || (now.getHours()===h && now.getMinutes()>=m);
+}
+
+function selectAnswer(qid, opt) {
+  selectedAnswers[qid] = opt;
+  renderAdminQuestions();
+  const btn = document.getElementById('cfm-'+qid);
+  if (btn) btn.disabled = false;
+}
+
+async function confirmAnswer(qid) {
+  const opt = selectedAnswers[qid];
+  if (!opt) return;
+  if (!confirm(`Confermi che la risposta corretta è:\n"${opt}"?\n\nI punti verranno assegnati subito a tutti gli invitati che hanno risposto correttamente.`)) return;
+
+  // Salva risposta corretta
+  await db.collection('questions').doc(qid).set({ correct: opt }, { merge: true });
+
+  // Trova chi ha votato giusto
+  const votes = await db.collection('votes').where('qid','==',qid).where('option','==',opt).get();
+  const batch = db.batch();
+  votes.forEach(doc => {
+    const userId = doc.data().userId;
+    const uRef = db.collection('users').doc(userId);
+    batch.update(uRef, {
+      pts: firebase.firestore.FieldValue.increment(10),
+      correct: firebase.firestore.FieldValue.increment(1)
+    });
+  });
+  await batch.commit();
+
+  alert(`✅ Fatto! ${votes.size} invitati hanno guadagnato 10 punti.`);
+  delete selectedAnswers[qid];
+}
+
+function renderAdminLb() {
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('admin-lb').innerHTML = allUsers.map((u,i) => `
+    <div class="lb-row">
+      <span style="min-width:30px;font-size:18px">${medals[i]||((i+1)+'°')}</span>
+      <span style="flex:1;font-size:14px">${u.name} ${u.table?'<span style="font-size:11px;color:var(--muted)">·'+u.table+'</span>':''}</span>
+      <span style="font-size:12px;color:var(--muted);margin-right:12px">${u.correct||0} corrette</span>
+      <span style="font-family:Georgia,serif;font-size:18px;font-weight:600;color:var(--gold)">${u.pts||0}</span>
+    </div>`).join('');
+}
+
+function showTab(name) {
+  document.getElementById('tab-questions').style.display = name==='questions' ? 'block' : 'none';
+  document.getElementById('tab-ranking').style.display   = name==='ranking'   ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
