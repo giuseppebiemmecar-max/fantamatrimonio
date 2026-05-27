@@ -2,12 +2,10 @@
 // Fa da proxy tra admin.html e OneSignal (evita il blocco CORS)
 
 export default async function handler(req, res) {
-  // Permetti solo POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Protezione base: controlla che arrivi dal nostro dominio
   const origin = req.headers.origin || '';
   const allowed = ['https://fantamatrimonio.vercel.app', 'http://localhost:3000'];
   if (!allowed.includes(origin)) {
@@ -20,11 +18,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+    const response = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Key q5sb3stwuuifuyxdhhty57lea'
+        'Authorization': 'Bearer os_v2_app_oc5oifr4cffxvnn2slgj2r5ldyqyhuaph4gekrfaijj7jzwbnhnlxf36u7seiq6j7arituipsxiyxorh67rysrhoea4pg62aaay4uxi'
       },
       body: JSON.stringify({
         app_id: '70bae416-3c11-4b7a-b5ba-92cc9d47ab1e',
@@ -36,13 +34,13 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    console.log('OneSignal response:', JSON.stringify(data));
 
-    if (data.errors) {
-      return res.status(400).json({ error: data.errors });
+    if (data.errors || !response.ok) {
+      return res.status(400).json({ error: data.errors || data });
     }
 
     return res.status(200).json({ success: true, recipients: data.recipients });
-
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
