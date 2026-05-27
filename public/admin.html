@@ -174,12 +174,13 @@
 <script>
 // ══ CONFIG ══ (stesso file index.html)
 const firebaseConfig = {
-   apiKey: "AIzaSyCmrLyzKYtZraDtWoU3KGaqOFVV4wKUWCs",
+  apiKey: "AIzaSyCmrLyzKYtZraDtWoU3KGaqOFVV4wKUWCs",
   authDomain: "frantamatrimonio.firebaseapp.com",
   projectId: "frantamatrimonio",
   storageBucket: "frantamatrimonio.firebasestorage.app",
   messagingSenderId: "225931901296",
   appId: "1:225931901296:web:05cb2996263bbb5dce77b5"
+
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -333,14 +334,10 @@ async function confirmAnswer(qid) {
 }
 
 // ════════════════════════════════════════════════
-//  NOTIFICHE — OneSignal REST API
-//  Manda push a tutti i segmenti "Subscribed Users"
+//  NOTIFICHE — tramite Vercel Function /api/notify
 // ════════════════════════════════════════════════
-const ONESIGNAL_APP_ID = '70bae416-3c11-4b7a-b5ba-92cc9d47ab1e';
-
 async function sendPushToAll(title, body) {
   try {
-    // Chiama la Vercel Function che fa da proxy verso OneSignal (evita CORS)
     const response = await fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -349,7 +346,7 @@ async function sendPushToAll(title, body) {
     const data = await response.json();
     console.log('Risposta notifica:', data);
     if (!data.success) {
-      console.warn('Errore:', data.error);
+      console.warn('Errore notifica:', data.error);
       return false;
     }
     console.log('Notifica inviata a', data.recipients, 'dispositivi');
@@ -375,7 +372,7 @@ async function sendCustomNotif() {
     document.getElementById('notif-title').value = '';
     document.getElementById('notif-body').value = '';
   } else {
-    alert('⚠️ Errore — controlla di aver inserito la REST API Key di OneSignal in admin.html');
+    alert('⚠️ Errore invio notifica — controlla la console del browser per i dettagli');
   }
 }
 
