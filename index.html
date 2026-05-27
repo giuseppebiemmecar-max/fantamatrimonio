@@ -12,10 +12,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 
-  <!-- Firebase -->
+
+  <!-- Firebase (solo Firestore, Messaging sostituito da OneSignal) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+
+  <!-- OneSignal notifiche push -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>window.OneSignalDeferred = window.OneSignalDeferred || [];</script>
 
   <style>
     :root {
@@ -372,7 +376,17 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // ════════════════════════════════════════════════
-//  DOMANDE (orari in formato HH:MM)
+//  DATA DEL MATRIMONIO
+//  Cambia questi valori se cambia la data!
+// ════════════════════════════════════════════════
+const WEDDING_DATE = { year: 2026, month: 6, day: 20 }; // 20 giugno 2026
+
+// ════════════════════════════════════════════════
+//  DOMANDE
+//  Per modificarle: cambia il testo in "text",
+//  le opzioni in "options", e l'orario in "time"
+//  Per aggiungerne una: copia una riga e incollala
+//  Per rimuoverne una: cancella la riga intera
 // ════════════════════════════════════════════════
 const QUESTIONS = [
   { id:'q01', text:'Quante volte Sofia cambierà outfit durante il giorno?', options:['Solo l\'abito da sposa','2 outfit','3 o più'], time:'10:00' },
@@ -400,17 +414,53 @@ let allScores   = [];   // [{name,pts,correct}]
 let notifEnabled = false;
 
 // ════════════════════════════════════════════════
+//  ID DISPOSITIVO STABILE
+//  Genera un ID unico per questo dispositivo e lo
+//  salva su Firestore. Se l'utente reinstalla l'app
+//  ma usa lo stesso browser/dispositivo, viene
+//  riconosciuto e non crea un profilo fantasma.
+// ════════════════════════════════════════════════
+function getDeviceId() {
+  let did = localStorage.getItem('fm_device_id');
+  if (!did) {
+    // Genera un ID casuale stabile e lo salva
+    did = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem('fm_device_id', did);
+  }
+  return did;
+}
+
+// ════════════════════════════════════════════════
 //  LOGIN
 // ════════════════════════════════════════════════
-function doLogin() {
+async function doLogin() {
   const name  = document.getElementById('login-name').value.trim();
   const table = document.getElementById('login-table').value.trim();
   if (!name) { alert('Inserisci il tuo nome per continuare!'); return; }
 
-  currentUser = { name, table, id: name.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now().toString(36) };
+  const deviceId = getDeviceId();
+
+  // Controlla se questo dispositivo è stato bannato dall'admin
+  const existing = await db.collection('users').doc(deviceId).get();
+  if (existing.exists && existing.data().banned) {
+    alert('Questo account è stato rimosso dall\'amministratore.');
+    return;
+  }
+
+  currentUser = { name, table, id: deviceId };
   localStorage.setItem('fm_user', JSON.stringify(currentUser));
 
-  db.collection('users').doc(currentUser.id).set({ name, table, pts: 0, correct: 0, joinedAt: new Date() }, { merge: true });
+  // Usa merge:true — se il dispositivo esiste già mantiene i punti
+  // ma aggiorna nome e tavolo (nel caso l'utente voglia cambiare nome)
+  await db.collection('users').doc(deviceId).set(
+    { name, table, joinedAt: new Date() },
+    { merge: true }
+  );
+
+  // Se è un nuovo utente inizializza i punti
+  if (!existing.exists) {
+    await db.collection('users').doc(deviceId).update({ pts: 0, correct: 0 });
+  }
 
   initApp();
 }
@@ -423,9 +473,19 @@ function doLogout() {
 // ════════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════════
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   const saved = localStorage.getItem('fm_user');
-  if (saved) { currentUser = JSON.parse(saved); initApp(); }
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    // Controlla se è stato bannato nel frattempo
+    const doc = await db.collection('users').doc(currentUser.id).get();
+    if (doc.exists && doc.data().banned) {
+      localStorage.removeItem('fm_user');
+      alert('Il tuo account è stato rimosso dall\'amministratore.');
+      return;
+    }
+    initApp();
+  }
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(console.warn);
   }
@@ -473,14 +533,45 @@ function listenQuestions() {
 // ════════════════════════════════════════════════
 //  RENDERING DOMANDE
 // ════════════════════════════════════════════════
-function isUnlocked(timeStr) {
-  const [h, m] = timeStr.split(':').map(Number);
+function isWeddingDay() {
   const now = new Date();
+  return now.getFullYear() === WEDDING_DATE.year &&
+         now.getMonth() + 1 === WEDDING_DATE.month &&
+         now.getDate()      === WEDDING_DATE.day;
+}
+
+function isUnlocked(timeStr) {
+  const now = new Date();
+  // Prima del giorno del matrimonio: nessuna domanda visibile
+  const wDate = new Date(WEDDING_DATE.year, WEDDING_DATE.month - 1, WEDDING_DATE.day);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (today < wDate) return false;
+  // Dopo il giorno del matrimonio: tutte visibili
+  if (today > wDate) return true;
+  // Il giorno del matrimonio: controlla l'orario
+  const [h, m] = timeStr.split(':').map(Number);
   return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
 }
 
 function renderQuestions() {
   const container = document.getElementById('questions-list');
+
+  // Prima del giorno del matrimonio
+  if (!isWeddingDay()) {
+    const now   = new Date();
+    const wDate = new Date(WEDDING_DATE.year, WEDDING_DATE.month - 1, WEDDING_DATE.day);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (today < wDate) {
+      const diff  = Math.round((wDate - today) / (1000 * 60 * 60 * 24));
+      container.innerHTML = `<div class="empty-state">
+        <div class="emoji">💍</div>
+        <p>Le domande si sbloccheranno il <strong>20 giugno 2026</strong></p>
+        <p style="margin-top:6px;font-size:12px">Mancano <strong>${diff}</strong> ${diff === 1 ? 'giorno' : 'giorni'}!</p>
+      </div>`;
+      return;
+    }
+  }
+
   const unlocked  = QUESTIONS.filter(q => isUnlocked(q.time));
   const locked    = QUESTIONS.filter(q => !isUnlocked(q.time));
 
@@ -628,20 +719,49 @@ function showPage(name, btn) {
 }
 
 // ════════════════════════════════════════════════
-//  NOTIFICHE
+//  NOTIFICHE — OneSignal
+//  App ID: 70bae416-3c11-4b7a-b5ba-92cc9d47ab1e
 // ════════════════════════════════════════════════
-function checkNotifPermission() {
-  const area = document.getElementById('notif-area');
-  notifEnabled = Notification.permission === 'granted';
-  updateToggleUI();
+const ONESIGNAL_APP_ID = '70bae416-3c11-4b7a-b5ba-92cc9d47ab1e';
 
-  if (Notification.permission === 'default') {
+// Inizializza OneSignal
+window.OneSignalDeferred.push(async function(OneSignal) {
+  await OneSignal.init({
+    appId: ONESIGNAL_APP_ID,
+    safari_web_id: 'web.onesignal.auto.' + ONESIGNAL_APP_ID,
+    notifyButton: { enable: false },
+    allowLocalhostAsSecureOrigin: true,
+  });
+
+  notifEnabled = OneSignal.Notifications.permission;
+  updateToggleUI();
+  updateNotifBanner();
+
+  // Quando l'utente si iscrive, salva il player ID su Firestore
+  OneSignal.User.PushSubscription.addEventListener('change', async () => {
+    const playerId = OneSignal.User.PushSubscription.id;
+    if (playerId && currentUser) {
+      await db.collection('users').doc(currentUser.id).update({
+        osPlayerId: playerId,
+        notifEnabled: true
+      });
+      notifEnabled = true;
+      updateToggleUI();
+      updateNotifBanner();
+    }
+  });
+});
+
+function updateNotifBanner() {
+  const area = document.getElementById('notif-area');
+  if (!area) return;
+  if (!notifEnabled) {
     area.innerHTML = `<div class="notif-banner warn">
       <div class="notif-dot warn"></div>
       <p><strong>Attiva le notifiche</strong> per ricevere un avviso quando arriva una nuova domanda!</p>
       <button onclick="requestNotif()" style="flex-shrink:0;margin-left:auto;background:var(--gold);color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:'Jost',sans-serif">Attiva</button>
     </div>`;
-  } else if (notifEnabled) {
+  } else {
     area.innerHTML = `<div class="notif-banner">
       <div class="notif-dot"></div>
       <p><strong>Notifiche attive</strong> — ti avviseremo ad ogni nuova domanda</p>
@@ -650,14 +770,16 @@ function checkNotifPermission() {
   }
 }
 
+function checkNotifPermission() {
+  updateNotifBanner();
+}
+
 function requestNotif() {
-  Notification.requestPermission().then(p => {
-    notifEnabled = p === 'granted';
+  window.OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.Notifications.requestPermission();
+    notifEnabled = OneSignal.Notifications.permission;
     updateToggleUI();
-    checkNotifPermission();
-    if (notifEnabled) {
-      db.collection('users').doc(currentUser.id).update({ notifEnabled: true });
-    }
+    updateNotifBanner();
   });
 }
 
@@ -667,7 +789,9 @@ function toggleNotif() {
 
 function updateToggleUI() {
   const t = document.getElementById('notif-toggle');
-  if (notifEnabled) t.classList.remove('off'); else t.classList.add('off');
+  if (t) {
+    if (notifEnabled) t.classList.remove('off'); else t.classList.add('off');
+  }
 }
 </script>
 </body>
