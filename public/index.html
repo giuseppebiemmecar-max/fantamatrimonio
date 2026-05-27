@@ -4,366 +4,300 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Fantamatrimonio">
-  <meta name="theme-color" content="#faf8f2">
+  <meta name="theme-color" content="#0a0a0a">
   <title>Fantamatrimonio · Giuseppe & Sofia</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-
-
-  <!-- Firebase (solo Firestore, Messaging sostituito da OneSignal) -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-  <!-- OneSignal notifiche push -->
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-  <script>window.OneSignalDeferred = window.OneSignalDeferred || [];</script>
-
   <style>
     :root {
       --gold: #c9a84c;
-      --gold-light: #e8d098;
-      --gold-pale: #f7f0dc;
-      --cream: #faf8f2;
-      --dark: #1e1a14;
-      --muted: #7a6e5f;
-      --border: #e2d9c4;
-      --white: #ffffff;
-      --success: #4a7c30;
-      --success-bg: #eef5e8;
+      --gold2: #e8d098;
+      --gold3: #f5e9c0;
+      --bg: #080806;
+      --bg2: #0f0e0b;
+      --bg3: #161410;
+      --border: rgba(201,168,76,.2);
+      --border2: rgba(201,168,76,.08);
+      --text: #f0e8d0;
+      --text2: #a09070;
+      --text3: #6a5a3a;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; background: var(--cream); font-family: 'Jost', sans-serif; color: var(--dark); }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-height:100vh;overflow-x:hidden}
 
-    /* ── LOGIN ── */
-    #login-screen {
-      min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 2rem 1.5rem;
-      background: var(--cream);
-    }
-    .login-ornament { font-size: 36px; margin-bottom: 1rem; }
-    .login-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 36px; font-weight: 600; letter-spacing: .5px;
-      color: var(--dark); text-align: center; line-height: 1.1;
-    }
-    .login-subtitle {
-      font-size: 13px; color: var(--muted); font-weight: 300;
-      margin: 6px 0 2rem; text-align: center; letter-spacing: 1px;
-    }
-    .login-card {
-      width: 100%; max-width: 360px;
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: 20px; padding: 2rem 1.75rem;
-    }
-    .login-card label { font-size: 12px; color: var(--muted); letter-spacing: .5px; display: block; margin-bottom: 6px; }
-    .login-card input {
-      width: 100%; padding: 12px 14px;
-      border: 1px solid var(--border); border-radius: 10px;
-      font-family: 'Jost', sans-serif; font-size: 15px; color: var(--dark);
-      background: var(--cream); outline: none; transition: border-color .2s;
-      margin-bottom: 1rem;
-    }
-    .login-card input:focus { border-color: var(--gold); }
-    .btn-gold {
-      width: 100%; padding: 13px;
-      background: var(--gold); color: white;
-      border: none; border-radius: 12px;
-      font-family: 'Jost', sans-serif; font-size: 15px; font-weight: 500;
-      cursor: pointer; letter-spacing: .3px; transition: background .2s, transform .1s;
-    }
-    .btn-gold:hover { background: #b8973d; }
-    .btn-gold:active { transform: scale(.98); }
-    .login-note {
-      font-size: 11px; color: var(--muted); text-align: center;
-      margin-top: 1rem; line-height: 1.5;
-    }
+    /* ── PARTICLES BG ── */
+    #particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+    .particle{position:absolute;width:2px;height:2px;background:var(--gold);border-radius:50%;opacity:0;animation:float linear infinite}
+    @keyframes float{0%{transform:translateY(100vh) translateX(0);opacity:0}10%{opacity:.6}90%{opacity:.2}100%{transform:translateY(-10vh) translateX(40px);opacity:0}}
 
-    /* ── APP SHELL ── */
-    #app { display: none; min-height: 100vh; padding-bottom: 72px; }
+    /* ── SCREENS ── */
+    .screen{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;transition:opacity .5s,transform .5s}
+    .screen.hidden{opacity:0;pointer-events:none;transform:translateY(20px)}
 
-    /* ── HEADER ── */
-    .app-header {
-      background: var(--white); border-bottom: 1px solid var(--border);
-      padding: 14px 1.25rem 12px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 10;
-    }
-    .header-left h1 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 20px; font-weight: 600; line-height: 1;
-    }
-    .header-left p { font-size: 11px; color: var(--muted); font-weight: 300; margin-top: 2px; }
-    .header-avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: var(--gold-pale); border: 1.5px solid var(--gold-light);
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 600; color: var(--gold);
-    }
+    /* ── SPLASH ── */
+    #splash{background:var(--bg);z-index:20}
+    .splash-ornament{font-size:48px;margin-bottom:1.5rem;animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+    .splash-title{font-family:'Cinzel',serif;font-size:clamp(28px,8vw,48px);font-weight:700;letter-spacing:3px;text-align:center;line-height:1;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .splash-names{font-family:'Cinzel',serif;font-size:clamp(14px,4vw,18px);letter-spacing:6px;color:var(--text2);text-align:center;margin-top:12px}
+    .splash-date{font-size:14px;color:var(--text3);letter-spacing:2px;text-align:center;margin-top:6px}
+    .splash-divider{width:120px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:2rem auto}
 
-    /* ── BOTTOM NAV ── */
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--white); border-top: 1px solid var(--border);
-      display: flex; padding: 8px 0 max(8px, env(safe-area-inset-bottom));
-      z-index: 10;
-    }
-    .nav-btn {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      gap: 3px; padding: 4px 0;
-      border: none; background: transparent; cursor: pointer;
-      font-family: 'Jost', sans-serif; font-size: 10px; color: var(--muted);
-      font-weight: 400; transition: color .15s;
-    }
-    .nav-btn.active { color: var(--gold); }
-    .nav-icon { font-size: 20px; line-height: 1; }
+    /* ── COUNTDOWN ── */
+    .countdown-wrap{display:flex;gap:1rem;justify-content:center;margin:1.5rem 0}
+    .cd-box{text-align:center;min-width:60px}
+    .cd-num{font-family:'Cinzel',serif;font-size:clamp(28px,8vw,42px);font-weight:700;color:var(--gold);line-height:1;display:block}
+    .cd-label{font-size:11px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-top:4px}
+    .cd-sep{font-family:'Cinzel',serif;font-size:32px;color:var(--text3);align-self:flex-start;margin-top:4px}
 
-    /* ── CONTENT ── */
-    .page { display: none; padding: 1.25rem; }
-    .page.active { display: block; }
+    /* ── WEDDING DAY BANNER ── */
+    .wedding-day-banner{text-align:center;padding:1.5rem;background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05));border:1px solid var(--border);border-radius:16px;max-width:400px;width:100%}
+    .wedding-day-banner .emoji{font-size:36px;margin-bottom:8px}
+    .wedding-day-banner h2{font-family:'Cinzel',serif;font-size:20px;color:var(--gold);margin-bottom:8px}
+    .wedding-day-banner p{font-size:15px;color:var(--text2);line-height:1.5;font-style:italic}
 
-    /* ── NOTIFICATION BANNER ── */
-    .notif-banner {
-      background: var(--success-bg); border: 1px solid #c0daa0;
-      border-radius: 12px; padding: 10px 14px;
-      margin-bottom: 1.25rem; display: flex; align-items: center; gap: 10px;
-    }
-    .notif-banner.warn { background: #fff8e8; border-color: #e8d080; }
-    .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
-    .notif-dot.warn { background: #c8a020; }
-    .notif-banner p { font-size: 12px; color: #2a5010; line-height: 1.4; }
-    .notif-banner.warn p { color: #7a5010; }
+    /* ── BUTTONS ── */
+    .btn{display:block;width:100%;max-width:320px;padding:14px 20px;border:none;border-radius:12px;font-family:'Cinzel',serif;font-size:14px;letter-spacing:1px;cursor:pointer;transition:all .2s;text-align:center}
+    .btn-gold{background:linear-gradient(135deg,var(--gold),#a8823a);color:#1a1400;font-weight:700}
+    .btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(201,168,76,.3)}
+    .btn-gold:active{transform:translateY(0)}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2);font-size:13px}
+    .btn-outline:hover{border-color:var(--gold);color:var(--gold)}
 
-    /* ── QUESTION CARD ── */
-    .q-card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem;
-      position: relative; overflow: hidden;
-      animation: fadeUp .35s ease both;
-    }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-    .q-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
-    }
-    .q-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .q-time { font-size: 11px; color: var(--muted); }
-    .q-badge {
-      font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500;
-    }
-    .q-badge.open { background: #eef5e8; color: #3a6e1a; }
-    .q-badge.closed { background: var(--gold-pale); color: #7a5a10; }
-    .q-badge.pending { background: #f0f4ff; color: #3050a0; }
-    .q-text {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 17px; font-style: italic; line-height: 1.4;
-      color: var(--dark); margin-bottom: 14px;
-    }
-    .options { display: flex; flex-direction: column; gap: 8px; }
-    .opt-btn {
-      padding: 11px 14px; border-radius: 10px;
-      border: 1.5px solid var(--border); background: transparent;
-      font-family: 'Jost', sans-serif; font-size: 13px; color: var(--dark);
-      cursor: pointer; text-align: left;
-      display: flex; justify-content: space-between; align-items: center;
-      transition: all .15s;
-    }
-    .opt-btn:hover:not(:disabled) { border-color: var(--gold); background: var(--gold-pale); }
-    .opt-btn.selected { border-color: var(--gold); background: var(--gold-pale); font-weight: 500; }
-    .opt-btn.correct { border-color: #4a7c30; background: #eef5e8; color: #2a5010; }
-    .opt-btn.wrong { border-color: #ddd; background: #f8f8f8; color: #aaa; }
-    .opt-btn:disabled { cursor: default; }
-    .opt-right { display: flex; align-items: center; gap: 8px; }
-    .bar-wrap { width: 60px; height: 5px; background: #ece8de; border-radius: 3px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 3px; background: var(--gold); transition: width .7s ease; }
-    .pct { font-size: 11px; color: var(--muted); min-width: 28px; text-align: right; }
-    .voted-msg { text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px; font-style: italic; }
-    .points-pill {
-      display: inline-flex; align-items: center; gap: 5px;
-      background: var(--gold-pale); border: 1px solid var(--gold-light);
-      border-radius: 20px; font-size: 12px; padding: 4px 12px;
-      color: #7a5a10; font-weight: 500; margin-top: 10px;
-    }
+    /* ── REGISTER SCREEN ── */
+    #register{background:var(--bg)}
+    .register-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2rem 1.75rem;width:100%;max-width:380px}
+    .register-card h2{font-family:'Cinzel',serif;font-size:20px;color:var(--gold);text-align:center;margin-bottom:6px}
+    .register-card p{font-size:14px;color:var(--text2);text-align:center;margin-bottom:1.5rem;font-style:italic}
+    .field{margin-bottom:1rem}
+    .field label{font-size:11px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:6px}
+    .field input{width:100%;padding:12px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Crimson Pro',serif;font-size:16px;outline:none;transition:border-color .2s}
+    .field input:focus{border-color:var(--gold)}
+    .field input::placeholder{color:var(--text3)}
 
-    /* LOCKED CARD */
-    .q-locked {
-      background: var(--cream); border: 1px dashed var(--border);
-      border-radius: 16px; padding: 1rem 1.25rem; margin-bottom: 1rem;
-      display: flex; align-items: center; gap: 12px; opacity: .75;
-    }
-    .q-locked-icon { font-size: 22px; flex-shrink: 0; }
-    .q-locked-text p { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
-    .q-locked-text span {
-      font-family: 'Cormorant Garamond', serif;
-      font-style: italic; font-size: 15px; color: var(--muted);
-    }
+    /* ── MAIN APP ── */
+    #app{background:var(--bg);display:none;flex-direction:column;position:fixed;inset:0;z-index:10;overflow:hidden}
+    #app.show{display:flex}
 
-    /* ── LEADERBOARD ── */
-    .lb-card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: 16px; overflow: hidden; margin-bottom: 1rem;
-    }
-    .lb-head {
-      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
-    }
-    .lb-head h2 {
-      font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600;
-    }
-    .lb-head p { font-size: 12px; color: var(--muted); font-weight: 300; margin-top: 2px; }
-    .lb-row {
-      display: flex; align-items: center; padding: .85rem 1.25rem;
-      border-bottom: .5px solid var(--border); transition: background .1s;
-    }
-    .lb-row:last-child { border-bottom: none; }
-    .lb-row.me { background: var(--gold-pale); }
-    .lb-rank { font-size: 13px; font-weight: 500; min-width: 28px; color: var(--muted); }
-    .lb-medal { font-size: 20px; min-width: 28px; }
-    .lb-info { flex: 1; margin-left: 8px; }
-    .lb-name { font-size: 14px; font-weight: 400; display: flex; align-items: center; gap: 6px; }
-    .lb-name .you { font-size: 10px; background: var(--gold); color: white; border-radius: 10px; padding: 1px 7px; font-weight: 500; }
-    .lb-sub { font-size: 11px; color: var(--muted); font-weight: 300; margin-top: 1px; }
-    .lb-bar { height: 3px; background: #ece8de; border-radius: 2px; margin-top: 4px; }
-    .lb-bar-fill { height: 100%; border-radius: 2px; background: var(--gold-light); }
-    .lb-pts {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 20px; font-weight: 600; color: var(--gold);
-    }
+    /* header */
+    .app-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg)}
+    .header-brand{display:flex;flex-direction:column}
+    .header-brand span:first-child{font-family:'Cinzel',serif;font-size:15px;color:var(--gold);letter-spacing:1px}
+    .header-brand span:last-child{font-size:12px;color:var(--text3);margin-top:1px}
+    .header-user{display:flex;align-items:center;gap:8px}
+    .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,rgba(201,168,76,.3),rgba(201,168,76,.1));border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;color:var(--gold);cursor:pointer}
 
-    /* ── PROFILO ── */
-    .profile-hero {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: 16px; padding: 1.5rem 1.25rem; text-align: center; margin-bottom: 1rem;
-    }
-    .profile-avatar {
-      width: 72px; height: 72px; border-radius: 50%;
-      background: var(--gold-pale); border: 2px solid var(--gold-light);
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600;
-      color: var(--gold); margin: 0 auto 12px;
-    }
-    .profile-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; }
-    .profile-sub { font-size: 12px; color: var(--muted); font-weight: 300; margin-top: 3px; }
-    .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 1rem; }
-    .stat-box { background: var(--cream); border-radius: 12px; padding: 12px 8px; text-align: center; }
-    .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; color: var(--dark); }
-    .stat-lbl { font-size: 10px; color: var(--muted); font-weight: 300; margin-top: 2px; }
-    .section-card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: 16px; padding: 1rem 1.25rem; margin-bottom: 1rem;
-    }
-    .section-card h3 { font-size: 11px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
-    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
-    .toggle-row + .toggle-row { margin-top: 10px; }
-    .toggle-row span { font-size: 13px; }
-    .toggle { width: 40px; height: 24px; border-radius: 12px; background: var(--success); cursor: pointer; position: relative; border: none; }
-    .toggle-dot { width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 3px; right: 3px; transition: right .2s; }
-    .toggle.off { background: #ddd; }
-    .toggle.off .toggle-dot { right: auto; left: 3px; }
+    /* nav */
+    .bottom-nav{display:flex;border-top:1px solid var(--border2);flex-shrink:0;background:var(--bg)}
+    .nav-btn{flex:1;padding:10px 4px 12px;border:none;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'Crimson Pro',serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);cursor:pointer;transition:color .2s;border-top:2px solid transparent}
+    .nav-btn.active{color:var(--gold);border-top-color:var(--gold)}
+    .nav-icon{font-size:18px;line-height:1}
 
-    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); }
-    .empty-state .emoji { font-size: 40px; margin-bottom: 10px; }
-    .empty-state p { font-size: 14px; font-style: italic; }
+    /* pages */
+    .page{display:none;flex:1;overflow-y:auto;padding:1.25rem;padding-bottom:2rem}
+    .page.active{display:block}
+
+    /* ── DOMANDE PAGE ── */
+    .page-title{font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:1.25rem}
+
+    /* locked state banner */
+    .locked-banner{background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.03));border:1px solid var(--border);border-radius:16px;padding:1.5rem;text-align:center;margin-bottom:1.25rem}
+    .locked-banner .icon{font-size:32px;margin-bottom:8px}
+    .locked-banner h3{font-family:'Cinzel',serif;font-size:16px;color:var(--gold);margin-bottom:8px}
+    .locked-banner p{font-size:14px;color:var(--text2);line-height:1.6;font-style:italic}
+
+    /* question card */
+    .q-card{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:1.25rem;margin-bottom:1rem;position:relative;overflow:hidden;animation:fadeUp .4s ease both}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .q-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+    .q-num{font-size:10px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+    .q-text{font-family:'Crimson Pro',serif;font-size:17px;font-style:italic;line-height:1.45;color:var(--text);margin-bottom:14px}
+    .q-answered{font-size:12px;color:var(--gold);margin-top:10px;text-align:center;letter-spacing:1px}
+    .q-locked-msg{font-size:12px;color:var(--text3);margin-top:10px;text-align:center;font-style:italic}
+
+    /* options */
+    .opts{display:flex;flex-direction:column;gap:8px}
+    .opt{padding:11px 14px;border-radius:10px;border:1px solid var(--border2);background:transparent;font-family:'Crimson Pro',serif;font-size:15px;color:var(--text2);cursor:pointer;text-align:left;transition:all .15s;display:flex;justify-content:space-between;align-items:center}
+    .opt:hover:not(:disabled){border-color:var(--gold);color:var(--text);background:rgba(201,168,76,.06)}
+    .opt.selected{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.08)}
+    .opt.correct{border-color:#6abf4b;color:#6abf4b;background:rgba(106,191,75,.08)}
+    .opt.wrong{border-color:var(--border2);color:var(--text3);background:transparent}
+    .opt.correct-unvoted{border-color:#6abf4b;color:#6abf4b;background:rgba(106,191,75,.05)}
+    .opt:disabled{cursor:default}
+    .opt-check{font-size:14px}
+
+    /* ── CLASSIFICA PAGE ── */
+    .lb-locked{text-align:center;padding:3rem 1rem}
+    .lb-locked .icon{font-size:48px;margin-bottom:1rem}
+    .lb-locked h3{font-family:'Cinzel',serif;font-size:18px;color:var(--gold);margin-bottom:8px}
+    .lb-locked p{font-size:15px;color:var(--text2);font-style:italic;line-height:1.5}
+
+    /* leaderboard entries */
+    .lb-winner{text-align:center;padding:1.5rem 1rem 1rem;margin-bottom:.5rem;animation:fadeUp .5s ease both}
+    .lb-winner .crown{font-size:40px;display:block;margin-bottom:4px;animation:bounce .8s ease infinite alternate}
+    @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-6px)}}
+    .lb-winner .name{font-family:'Cinzel',serif;font-size:24px;color:var(--gold);font-weight:700}
+    .lb-winner .pts{font-size:32px;font-family:'Cinzel',serif;color:var(--gold2);font-weight:700;margin-top:4px}
+    .lb-winner .sub{font-size:13px;color:var(--text3);margin-top:2px;font-style:italic}
+    .lb-winner.me .name{text-shadow:0 0 20px rgba(201,168,76,.5)}
+
+    .lb-podium{display:flex;justify-content:center;gap:.5rem;margin-bottom:1rem}
+    .lb-pod{flex:1;max-width:140px;background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:.75rem .5rem;text-align:center;animation:fadeUp .5s ease both}
+    .lb-pod.me{border-color:var(--gold);background:rgba(201,168,76,.06)}
+    .lb-pod .medal{font-size:22px;margin-bottom:4px}
+    .lb-pod .pod-name{font-size:13px;color:var(--text);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lb-pod .pod-pts{font-family:'Cinzel',serif;font-size:18px;color:var(--gold);font-weight:700;margin-top:2px}
+    .lb-pod .pod-sub{font-size:10px;color:var(--text3);margin-top:1px}
+
+    .lb-list{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;overflow:hidden}
+    .lb-row{display:flex;align-items:center;padding:.75rem 1rem;border-bottom:1px solid var(--border2);animation:fadeUp .4s ease both}
+    .lb-row:last-child{border-bottom:none}
+    .lb-row.me{background:rgba(201,168,76,.05)}
+    .lb-rank{font-family:'Cinzel',serif;font-size:13px;color:var(--text3);min-width:28px}
+    .lb-info{flex:1;margin-left:8px}
+    .lb-name{font-size:15px;color:var(--text);display:flex;align-items:center;gap:6px}
+    .you-tag{font-size:9px;background:var(--gold);color:#1a1400;border-radius:8px;padding:1px 6px;font-family:'Cinzel',serif;letter-spacing:.5px}
+    .lb-sub{font-size:11px;color:var(--text3);margin-top:1px;font-style:italic}
+    .lb-pts{font-family:'Cinzel',serif;font-size:18px;color:var(--gold);font-weight:600}
+
+    /* ── PROFILO PAGE ── */
+    .profile-hero{text-align:center;padding:1.5rem 1rem;margin-bottom:1rem}
+    .profile-avatar-big{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(201,168,76,.3),rgba(201,168,76,.05));border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:26px;color:var(--gold);margin:0 auto 12px}
+    .profile-name-big{font-family:'Cinzel',serif;font-size:20px;color:var(--text);margin-bottom:4px}
+    .profile-sub{font-size:13px;color:var(--text3);font-style:italic}
+    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:1.25rem}
+    .stat-box{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:12px 6px;text-align:center}
+    .stat-n{font-family:'Cinzel',serif;font-size:22px;color:var(--gold);font-weight:700}
+    .stat-l{font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+    .section-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:1.25rem;margin-bottom:1rem}
+    .section-card h3{font-size:10px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:12px}
+    .edit-row{display:flex;gap:8px;align-items:center}
+    .edit-row input{flex:1;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Crimson Pro',serif;font-size:15px;outline:none}
+    .edit-row input:focus{border-color:var(--gold)}
+    .save-name-btn{padding:10px 16px;background:var(--gold);color:#1a1400;border:none;border-radius:9px;font-family:'Cinzel',serif;font-size:12px;cursor:pointer;white-space:nowrap}
+    .logout-btn{width:100%;padding:11px;background:transparent;border:1px solid rgba(200,60,60,.3);border-radius:10px;color:#c84040;font-family:'Cinzel',serif;font-size:12px;letter-spacing:1px;cursor:pointer;transition:all .2s}
+    .logout-btn:hover{background:rgba(200,60,60,.1)}
+
+    /* ── MODALS ── */
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:1.5rem;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .3s}
+    .modal-bg.open{opacity:1;pointer-events:all}
+    .modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:1.5rem;max-width:340px;width:100%;transform:translateY(20px);transition:transform .3s}
+    .modal-bg.open .modal{transform:translateY(0)}
+    .modal h3{font-family:'Cinzel',serif;font-size:16px;color:var(--gold);margin-bottom:8px;text-align:center}
+    .modal p{font-size:14px;color:var(--text2);text-align:center;line-height:1.5;margin-bottom:1.25rem;font-style:italic}
+
+    /* toast */
+    .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 20px;font-size:13px;color:var(--gold);letter-spacing:.5px;z-index:200;opacity:0;transition:all .3s;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-ornament">💍</div>
-  <h1 class="login-title">Giuseppe<br>&amp; Sofia</h1>
-  <p class="login-subtitle">✦ &nbsp;Fantamatrimonio &nbsp;✦</p>
-  <div class="login-card">
-    <label>IL TUO NOME</label>
-    <input type="text" id="login-name" placeholder="Es. Mario Rossi" autocomplete="name">
-    <label>TAVOLO (opzionale)</label>
-    <input type="text" id="login-table" placeholder="Es. Tavolo 5">
-    <button class="btn-gold" onclick="doLogin()">Entra nel gioco →</button>
-    <p class="login-note">Inserisci il tuo nome così apparirai in classifica.<br>Nessuna password richiesta.</p>
+<!-- PARTICLES -->
+<div id="particles"></div>
+
+<!-- SPLASH / COUNTDOWN -->
+<div class="screen" id="splash">
+  <div class="splash-ornament">💍</div>
+  <div class="splash-title">Giuseppe<br>&amp; Sofia</div>
+  <div class="splash-names">FANTAMATRIMONIO</div>
+  <div class="splash-date">20 · VI · 2026</div>
+  <div class="splash-divider"></div>
+  <div id="countdown-area"></div>
+  <div style="margin-top:2rem;width:100%;max-width:320px" id="splash-btn-area"></div>
+</div>
+
+<!-- REGISTER -->
+<div class="screen hidden" id="register">
+  <div class="register-card">
+    <h2>Benvenuto/a</h2>
+    <p>Inserisci il tuo nome per partecipare al gioco</p>
+    <div class="field">
+      <label>Il tuo nome</label>
+      <input type="text" id="reg-name" placeholder="Es. Mario Rossi" autocomplete="name" maxlength="40">
+    </div>
+    <button class="btn btn-gold" onclick="doRegister()" style="margin-top:.5rem">Partecipa →</button>
+    <p style="font-size:12px;color:var(--text3);text-align:center;margin-top:1rem;font-style:italic">Nessuna password richiesta</p>
   </div>
 </div>
 
-<!-- APP -->
+<!-- MAIN APP -->
 <div id="app">
   <header class="app-header">
-    <div class="header-left">
-      <h1>💍 Giuseppe &amp; Sofia</h1>
-      <p id="header-sub">Fantamatrimonio · 2026</p>
+    <div class="header-brand">
+      <span>💍 Giuseppe &amp; Sofia</span>
+      <span>Fantamatrimonio</span>
     </div>
-    <div class="header-avatar" id="header-avatar">?</div>
+    <div class="header-user">
+      <div class="avatar" id="header-avatar" onclick="showPage('profilo',document.querySelectorAll('.nav-btn')[2])">?</div>
+    </div>
   </header>
 
-  <!-- PAGE: DOMANDE -->
+  <!-- DOMANDE -->
   <div class="page active" id="page-domande">
-    <div id="notif-area"></div>
-    <div id="questions-list">
-      <div class="empty-state"><div class="emoji">⏳</div><p>Le domande appariranno durante la giornata…</p></div>
-    </div>
+    <div class="page-title">Le domande</div>
+    <div id="questions-container"></div>
   </div>
 
-  <!-- PAGE: CLASSIFICA -->
+  <!-- CLASSIFICA -->
   <div class="page" id="page-classifica">
-    <div class="lb-card">
-      <div class="lb-head">
-        <h2>Classifica</h2>
-        <p id="lb-subtitle">Aggiornata in tempo reale</p>
-      </div>
-      <div id="lb-list"><div class="empty-state"><div class="emoji">🏆</div><p>La classifica si aggiorna man mano che arrivano i punti…</p></div></div>
-    </div>
+    <div class="page-title">Classifica</div>
+    <div id="lb-container"></div>
   </div>
 
-  <!-- PAGE: PROFILO -->
+  <!-- PROFILO -->
   <div class="page" id="page-profilo">
     <div class="profile-hero">
-      <div class="profile-avatar" id="prof-avatar">?</div>
-      <div class="profile-name" id="prof-name">—</div>
-      <div class="profile-sub" id="prof-sub">—</div>
+      <div class="profile-avatar-big" id="prof-avatar">?</div>
+      <div class="profile-name-big" id="prof-name">—</div>
+      <div class="profile-sub" id="prof-sub">Invitato/a</div>
       <div class="stats-row">
-        <div class="stat-box"><div class="stat-num" id="stat-pts">0</div><div class="stat-lbl">punti</div></div>
-        <div class="stat-box"><div class="stat-num" id="stat-correct">0</div><div class="stat-lbl">risposte ok</div></div>
-        <div class="stat-box"><div class="stat-num" id="stat-rank">#—</div><div class="stat-lbl">posizione</div></div>
+        <div class="stat-box"><div class="stat-n" id="s-pts">0</div><div class="stat-l">Punti</div></div>
+        <div class="stat-box"><div class="stat-n" id="s-ok">0</div><div class="stat-l">Corrette</div></div>
+        <div class="stat-box"><div class="stat-n" id="s-rank">#—</div><div class="stat-l">Posizione</div></div>
       </div>
     </div>
     <div class="section-card">
-      <h3>Notifiche</h3>
-      <div class="toggle-row">
-        <span>Nuove domande</span>
-        <button class="toggle" id="notif-toggle" onclick="toggleNotif()"><div class="toggle-dot"></div></button>
-      </div>
-      <div class="toggle-row">
-        <span>Classifica finale</span>
-        <button class="toggle" id="ranking-toggle"><div class="toggle-dot"></div></button>
+      <h3>Modifica nome</h3>
+      <div class="edit-row">
+        <input type="text" id="edit-name" placeholder="Nuovo nome" maxlength="40">
+        <button class="save-name-btn" onclick="saveName()">Salva</button>
       </div>
     </div>
     <div class="section-card">
       <h3>Account</h3>
-      <div class="toggle-row">
-        <span style="font-size:13px;color:var(--muted)">Connesso come <strong id="prof-connected">—</strong></span>
-        <button onclick="doLogout()" style="font-size:12px;color:#c44;border:1px solid #ecc;background:transparent;padding:4px 10px;border-radius:8px;cursor:pointer;font-family:'Jost',sans-serif">Esci</button>
-      </div>
+      <button class="logout-btn" onclick="doLogout()">Esci e cambia account</button>
     </div>
   </div>
 
-  <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
-    <button class="nav-btn active" onclick="showPage('domande',this)">
-      <span class="nav-icon">❓</span>Domande
-    </button>
-    <button class="nav-btn" onclick="showPage('classifica',this)">
-      <span class="nav-icon">🏆</span>Classifica
-    </button>
-    <button class="nav-btn" onclick="showPage('profilo',this)">
-      <span class="nav-icon">👤</span>Profilo
-    </button>
+    <button class="nav-btn active" onclick="showPage('domande',this)"><span class="nav-icon">📋</span>Domande</button>
+    <button class="nav-btn" onclick="showPage('classifica',this)"><span class="nav-icon">🏆</span>Classifica</button>
+    <button class="nav-btn" onclick="showPage('profilo',this)"><span class="nav-icon">👤</span>Profilo</button>
   </nav>
 </div>
 
+<!-- MODALS -->
+<div class="modal-bg" id="modal-locked">
+  <div class="modal">
+    <h3>🔒 Risposte bloccate</h3>
+    <p>Dal 20 giugno 2026 non è più possibile modificare le risposte. Attendi la fine del matrimonio per scoprire la classifica!</p>
+    <button class="btn btn-gold" onclick="closeModal('modal-locked')" style="margin:0 auto">Ho capito</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-// ════════════════════════════════════════════════
-//  FIREBASE CONFIG — sostituisci con i tuoi valori
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
+//  FIREBASE CONFIG — sostituisci con i tuoi
+// ══════════════════════════════════════════
 const firebaseConfig = {
   apiKey: "AIzaSyCmrLyzKYtZraDtWoU3KGaqOFVV4wKUWCs",
   authDomain: "frantamatrimonio.firebaseapp.com",
@@ -371,427 +305,406 @@ const firebaseConfig = {
   storageBucket: "frantamatrimonio.firebasestorage.app",
   messagingSenderId: "225931901296",
   appId: "1:225931901296:web:05cb2996263bbb5dce77b5"
+
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// ════════════════════════════════════════════════
-//  DATA DEL MATRIMONIO
-//  Cambia questi valori se cambia la data!
-// ════════════════════════════════════════════════
-const WEDDING_DATE = { year: 2026, month: 6, day: 20 }; // 20 giugno 2026
+// ══════════════════════════════════════════
+//  DATA MATRIMONIO
+// ══════════════════════════════════════════
+const WEDDING = new Date(2026, 5, 20, 0, 0, 0); // 20 giugno 2026
 
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  DOMANDE
-//  Per modificarle: cambia il testo in "text",
-//  le opzioni in "options", e l'orario in "time"
-//  Per aggiungerne una: copia una riga e incollala
-//  Per rimuoverne una: cancella la riga intera
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
 const QUESTIONS = [
-  { id:'q01', text:'Quante volte Sofia cambierà outfit durante il giorno?', options:['Solo l\'abito da sposa','2 outfit','3 o più'], time:'10:00' },
-  { id:'q02', text:'Il discorso del testimone farà piangere o ridere di più?', options:['Soprattutto piangere','Soprattutto ridere','Metà e metà'], time:'14:05' },
-  { id:'q03', text:'Qualcuno rovescerà qualcosa sul vestito?', options:['Sì, uno sposo','Sì, un invitato','No, nessun incidente'], time:'14:30' },
-  { id:'q04', text:'La sposa arriverà in ritardo alla cerimonia?', options:['Sì, in ritardo','No, puntuale','Anticipa tutti'], time:'15:50' },
-  { id:'q05', text:'Chi piangerà per primo tra gli sposi?', options:['Giuseppe','Sofia','Entrambi insieme'], time:'15:00' },
-  { id:'q06', text:'L\'anello andrà al dito al primo colpo?', options:['Sì, liscio','No, un po\' di fatica'], time:'15:30' },
-  { id:'q07', text:'Quante portate prima che qualcuno si alzi a ballare?', options:['Già all\'antipasto','Al primo','Al secondo','Al dolce'], time:'15:00' },
-  { id:'q08', text:'Quale parente ballerà in modo più epico?', options:['Uno zio','Un nonno','Il papà di Giuseppe','Il papà di Sofia'], time:'20:00' },
-  { id:'q09', text:'Qualcuno si toglierà le scarpe entro le 22?', options:['Sì, prima delle 22','Sì, dopo le 22','No, resistono tutti'], time:'21:00' },
-  { id:'q10', text:'Il DJ replicherà almeno una canzone due volte?', options:['Sì','No'], time:'21:00' },
-  { id:'q11', text:'Ci sarà almeno un ballo di gruppo (Macarena, YMCA…)?', options:['Sì','No, niente balli di gruppo'], time:'21:30' },
-  { id:'q12', text:'Qual è la prima cosa che faranno gli sposi appena soli?', options:['Mangiano qualcosa','Crollano a dormire','Si mettono a ballare','Guardano le foto'], time:'23:00' },
-  { id:'q13', text:'Chi dei due si ricorderà più dettagli del matrimonio il giorno dopo?', options:['Giuseppe','Sofia','Pari pari'], time:'23:30' },
+  { id:'q01', text:'Quante volte Sofia cambierà outfit durante il giorno?', options:['Solo l\'abito da sposa','2 outfit','3 o più'] },
+  { id:'q02', text:'Il discorso del testimone farà piangere o ridere di più?', options:['Soprattutto piangere','Soprattutto ridere','Metà e metà'] },
+  { id:'q03', text:'Qualcuno rovescerà qualcosa sul vestito?', options:['Sì, uno sposo','Sì, un invitato','No, nessun incidente'] },
+  { id:'q04', text:'La sposa arriverà in ritardo alla cerimonia?', options:['Sì, in ritardo','No, puntuale','Anticipa tutti'] },
+  { id:'q05', text:'Chi piangerà per primo tra gli sposi?', options:['Giuseppe','Sofia','Entrambi insieme'] },
+  { id:'q06', text:'L\'anello andrà al dito al primo colpo?', options:['Sì, liscio','No, un po\' di fatica'] },
+  { id:'q07', text:'Quante portate prima che qualcuno si alzi a ballare?', options:['Già all\'antipasto','Al primo','Al secondo','Al dolce'] },
+  { id:'q08', text:'Quale parente ballerà in modo più epico?', options:['Uno zio','Un nonno','Il papà di Giuseppe','Il papà di Sofia'] },
+  { id:'q09', text:'Qualcuno si toglierà le scarpe entro le 22?', options:['Sì, prima delle 22','Sì, dopo le 22','No, resistono tutti'] },
+  { id:'q10', text:'Il DJ replicherà almeno una canzone due volte?', options:['Sì','No'] },
+  { id:'q11', text:'Ci sarà almeno un ballo di gruppo (Macarena, YMCA…)?', options:['Sì','No, niente balli di gruppo'] },
+  { id:'q12', text:'Qual è la prima cosa che faranno gli sposi appena soli?', options:['Mangiano qualcosa','Crollano a dormire','Si mettono a ballare','Guardano le foto'] },
+  { id:'q13', text:'Chi dei due si ricorderà più dettagli del matrimonio il giorno dopo?', options:['Giuseppe','Sofia','Pari pari'] },
 ];
 
-// ════════════════════════════════════════════════
-//  STATO LOCALE
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
 let currentUser = null;
-let userVotes   = {};   // qid -> opzione scelta
-let qStates     = {};   // qid -> { votes:{opt:count}, correct:string|null, points:10 }
-let allScores   = [];   // [{name,pts,correct}]
-let notifEnabled = false;
+let userVotes   = {};
+let qStates     = {};
+let allUsers    = [];
+let lbUnlocked  = false;
 
-// ════════════════════════════════════════════════
-//  ID DISPOSITIVO STABILE
-//  Genera un ID unico per questo dispositivo e lo
-//  salva su Firestore. Se l'utente reinstalla l'app
-//  ma usa lo stesso browser/dispositivo, viene
-//  riconosciuto e non crea un profilo fantasma.
-// ════════════════════════════════════════════════
-function getDeviceId() {
-  let did = localStorage.getItem('fm_device_id');
-  if (!did) {
-    // Genera un ID casuale stabile e lo salva
-    did = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    localStorage.setItem('fm_device_id', did);
+// ══════════════════════════════════════════
+//  PARTICLES
+// ══════════════════════════════════════════
+(function(){
+  const c = document.getElementById('particles');
+  for(let i=0;i<20;i++){
+    const p = document.createElement('div');
+    p.className='particle';
+    p.style.cssText=`left:${Math.random()*100}%;animation-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*8}s;opacity:0`;
+    c.appendChild(p);
   }
-  return did;
-}
+})();
 
-// ════════════════════════════════════════════════
-//  LOGIN
-// ════════════════════════════════════════════════
-async function doLogin() {
-  const name  = document.getElementById('login-name').value.trim();
-  const table = document.getElementById('login-table').value.trim();
-  if (!name) { alert('Inserisci il tuo nome per continuare!'); return; }
+// ══════════════════════════════════════════
+//  COUNTDOWN
+// ══════════════════════════════════════════
+function updateCountdown(){
+  const now  = new Date();
+  const diff = WEDDING - now;
+  const area = document.getElementById('countdown-area');
+  const btnArea = document.getElementById('splash-btn-area');
 
-  const deviceId = getDeviceId();
-
-  // Controlla se questo dispositivo è stato bannato dall'admin
-  const existing = await db.collection('users').doc(deviceId).get();
-  if (existing.exists && existing.data().banned) {
-    alert('Questo account è stato rimosso dall\'amministratore.');
+  if(diff <= 0){
+    // È il giorno del matrimonio o dopo
+    area.innerHTML = `<div class="wedding-day-banner"><div class="emoji">💒</div><h2>È il grande giorno!</h2><p>Oggi è il matrimonio di Giuseppe &amp; Sofia</p></div>`;
+    btnArea.innerHTML = currentUser
+      ? `<button class="btn btn-gold" onclick="goToApp()">Entra nel gioco →</button>`
+      : `<button class="btn btn-gold" onclick="showScreen('register')">Partecipa →</button>`;
     return;
   }
 
-  currentUser = { name, table, id: deviceId };
+  const d = Math.floor(diff/(1000*60*60*24));
+  const h = Math.floor((diff%(1000*60*60*24))/(1000*60*60));
+  const m = Math.floor((diff%(1000*60*60))/(1000*60));
+  const s = Math.floor((diff%(1000*60))/1000);
+
+  area.innerHTML = `<div class="countdown-wrap">
+    <div class="cd-box"><span class="cd-num">${String(d).padStart(2,'0')}</span><span class="cd-label">Giorni</span></div>
+    <span class="cd-sep">·</span>
+    <div class="cd-box"><span class="cd-num">${String(h).padStart(2,'0')}</span><span class="cd-label">Ore</span></div>
+    <span class="cd-sep">·</span>
+    <div class="cd-box"><span class="cd-num">${String(m).padStart(2,'0')}</span><span class="cd-label">Min</span></div>
+    <span class="cd-sep">·</span>
+    <div class="cd-box"><span class="cd-num">${String(s).padStart(2,'0')}</span><span class="cd-label">Sec</span></div>
+  </div>`;
+
+  btnArea.innerHTML = currentUser
+    ? `<button class="btn btn-gold" onclick="goToApp()">Vai alle domande →</button>
+       <p style="font-size:12px;color:var(--text3);text-align:center;margin-top:10px;font-style:italic">Hai già effettuato l'accesso come <strong style="color:var(--gold)">${currentUser.name}</strong></p>`
+    : `<button class="btn btn-gold" onclick="showScreen('register')">Registrati e gioca →</button>`;
+}
+
+// ══════════════════════════════════════════
+//  SCREENS
+// ══════════════════════════════════════════
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(name).classList.remove('hidden');
+}
+
+function goToApp(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('app').classList.add('show');
+  renderQuestions();
+  renderLeaderboard();
+  updateProfileUI();
+}
+
+// ══════════════════════════════════════════
+//  DEVICE ID
+// ══════════════════════════════════════════
+function getDeviceId(){
+  let id = localStorage.getItem('fm_device_id');
+  if(!id){ id='dev_'+Math.random().toString(36).slice(2)+Date.now().toString(36); localStorage.setItem('fm_device_id',id); }
+  return id;
+}
+
+// ══════════════════════════════════════════
+//  REGISTER
+// ══════════════════════════════════════════
+async function doRegister(){
+  const name = document.getElementById('reg-name').value.trim();
+  if(!name){ showToast('Inserisci il tuo nome!'); return; }
+  const deviceId = getDeviceId();
+  const existing = await db.collection('users').doc(deviceId).get();
+  if(existing.exists && existing.data().banned){ showToast('Account rimosso dall\'admin'); return; }
+  currentUser = { name, id: deviceId };
   localStorage.setItem('fm_user', JSON.stringify(currentUser));
-
-  // Usa merge:true — se il dispositivo esiste già mantiene i punti
-  // ma aggiorna nome e tavolo (nel caso l'utente voglia cambiare nome)
-  await db.collection('users').doc(deviceId).set(
-    { name, table, joinedAt: new Date() },
-    { merge: true }
-  );
-
-  // Se è un nuovo utente inizializza i punti
-  if (!existing.exists) {
-    await db.collection('users').doc(deviceId).update({ pts: 0, correct: 0 });
+  if(!existing.exists){
+    await db.collection('users').doc(deviceId).set({ name, pts:0, correct:0, joinedAt:new Date() });
+  } else {
+    await db.collection('users').doc(deviceId).update({ name });
   }
-
-  initApp();
+  goToApp();
 }
 
-function doLogout() {
-  localStorage.removeItem('fm_user');
-  location.reload();
-}
-
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  INIT
-// ════════════════════════════════════════════════
-window.addEventListener('load', async () => {
+// ══════════════════════════════════════════
+window.addEventListener('load', async ()=>{
+  // Aggiorna countdown ogni secondo
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // Genera particelle
   const saved = localStorage.getItem('fm_user');
-  if (saved) {
+  if(saved){
     currentUser = JSON.parse(saved);
-    // Controlla se è stato bannato nel frattempo
     const doc = await db.collection('users').doc(currentUser.id).get();
-    if (doc.exists && doc.data().banned) {
-      localStorage.removeItem('fm_user');
-      alert('Il tuo account è stato rimosso dall\'amministratore.');
-      return;
-    }
-    initApp();
+    if(doc.exists && doc.data().banned){ localStorage.removeItem('fm_user'); currentUser=null; }
+    else if(doc.exists){ currentUser.name = doc.data().name; localStorage.setItem('fm_user',JSON.stringify(currentUser)); }
   }
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(console.warn);
+
+  // Mostra splash con countdown
+  showScreen('splash');
+
+  // Ascolta stato domande e classifica in realtime
+  db.collection('questions').onSnapshot(snap=>{
+    snap.forEach(doc=>{ qStates[doc.id]=doc.data(); });
+    if(document.getElementById('page-domande').classList.contains('active')) renderQuestions();
+    if(document.getElementById('page-classifica').classList.contains('active')) renderLeaderboard();
+  });
+
+  db.collection('users').orderBy('pts','desc').onSnapshot(snap=>{
+    allUsers=[];
+    snap.forEach(doc=>{ if(!doc.data().banned) allUsers.push({id:doc.id,...doc.data()}); });
+    if(document.getElementById('page-classifica').classList.contains('active')) renderLeaderboard();
+    updateProfileStats();
+  });
+
+  // Ascolta stato classifica
+  db.collection('settings').doc('app').onSnapshot(doc=>{
+    lbUnlocked = doc.exists && doc.data().lbUnlocked;
+    if(document.getElementById('page-classifica').classList.contains('active')) renderLeaderboard();
+  });
+
+  // Carica voti utente
+  if(currentUser){
+    db.collection('votes').where('userId','==',currentUser.id).onSnapshot(snap=>{
+      snap.forEach(doc=>{ userVotes[doc.data().qid]=doc.data().option; });
+      if(document.getElementById('page-domande').classList.contains('active')) renderQuestions();
+    });
   }
 });
 
-function initApp() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-
-  const initials = currentUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  document.getElementById('header-avatar').textContent = initials;
-  document.getElementById('header-sub').textContent = currentUser.table ? `Tavolo ${currentUser.table}` : 'Fantamatrimonio';
-  document.getElementById('prof-avatar').textContent = initials;
-  document.getElementById('prof-name').textContent = currentUser.name;
-  document.getElementById('prof-sub').textContent = currentUser.table ? `Tavolo ${currentUser.table}` : 'Invitato/a';
-  document.getElementById('prof-connected').textContent = currentUser.name;
-
-  loadMyVotes();
-  listenQuestions();
-  listenLeaderboard();
-  checkNotifPermission();
-  setInterval(renderQuestions, 30000); // ricontrolla ogni 30 sec
+// ══════════════════════════════════════════
+//  DOMANDE
+// ══════════════════════════════════════════
+function isWeddingDayOrAfter(){
+  return new Date() >= WEDDING;
 }
 
-// ════════════════════════════════════════════════
-//  CARICA VOTI UTENTE
-// ════════════════════════════════════════════════
-function loadMyVotes() {
-  db.collection('votes').where('userId','==',currentUser.id).get().then(snap => {
-    snap.forEach(doc => { userVotes[doc.data().qid] = doc.data().option; });
-    renderQuestions();
-  });
-}
+function renderQuestions(){
+  const c = document.getElementById('questions-container');
+  if(!currentUser){ c.innerHTML=''; return; }
 
-// ════════════════════════════════════════════════
-//  ASCOLTA STATO DOMANDE IN REALTIME
-// ════════════════════════════════════════════════
-function listenQuestions() {
-  db.collection('questions').onSnapshot(snap => {
-    snap.forEach(doc => { qStates[doc.id] = doc.data(); });
-    renderQuestions();
-  });
-}
+  let html='';
 
-// ════════════════════════════════════════════════
-//  RENDERING DOMANDE
-// ════════════════════════════════════════════════
-function isWeddingDay() {
-  const now = new Date();
-  return now.getFullYear() === WEDDING_DATE.year &&
-         now.getMonth() + 1 === WEDDING_DATE.month &&
-         now.getDate()      === WEDDING_DATE.day;
-}
-
-function isUnlocked(timeStr) {
-  const now = new Date();
-  // Prima del giorno del matrimonio: nessuna domanda visibile
-  const wDate = new Date(WEDDING_DATE.year, WEDDING_DATE.month - 1, WEDDING_DATE.day);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (today < wDate) return false;
-  // Dopo il giorno del matrimonio: tutte visibili
-  if (today > wDate) return true;
-  // Il giorno del matrimonio: controlla l'orario
-  const [h, m] = timeStr.split(':').map(Number);
-  return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
-}
-
-function renderQuestions() {
-  const container = document.getElementById('questions-list');
-
-  // Prima del giorno del matrimonio
-  if (!isWeddingDay()) {
-    const now   = new Date();
-    const wDate = new Date(WEDDING_DATE.year, WEDDING_DATE.month - 1, WEDDING_DATE.day);
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    if (today < wDate) {
-      const diff  = Math.round((wDate - today) / (1000 * 60 * 60 * 24));
-      container.innerHTML = `<div class="empty-state">
-        <div class="emoji">💍</div>
-        <p>Le domande si sbloccheranno il <strong>20 giugno 2026</strong></p>
-        <p style="margin-top:6px;font-size:12px">Mancano <strong>${diff}</strong> ${diff === 1 ? 'giorno' : 'giorni'}!</p>
-      </div>`;
-      return;
-    }
+  // Banner "bloccato" se è il giorno del matrimonio o dopo
+  if(isWeddingDayOrAfter()){
+    html+=`<div class="locked-banner">
+      <div class="icon">💒</div>
+      <h3>Il grande giorno è arrivato!</h3>
+      <p>Le risposte sono state bloccate. Attendi la fine del matrimonio per scoprire i risultati e la classifica!</p>
+    </div>`;
   }
 
-  const unlocked  = QUESTIONS.filter(q => isUnlocked(q.time));
-  const locked    = QUESTIONS.filter(q => !isUnlocked(q.time));
-
-  if (unlocked.length === 0 && locked.length === 0) return;
-
-  let html = '';
-
-  unlocked.sort((a,b) => a.time.localeCompare(b.time)).forEach(q => {
-    const state   = qStates[q.id] || {};
+  QUESTIONS.forEach((q,i)=>{
+    const state   = qStates[q.id]||{};
     const myVote  = userVotes[q.id];
-    const correct = state.correct || null;
-    const totalVotes = state.votes ? Object.values(state.votes).reduce((a,b)=>a+b,0) : 0;
-    const isClosed = !!correct;
+    const correct = state.correct||null;
+    const locked  = isWeddingDayOrAfter();
 
-    html += `<div class="q-card">
-      <div class="q-meta">
-        <span class="q-time">⏰ ore ${q.time}</span>
-        <span class="q-badge ${isClosed ? 'closed' : 'open'}">${isClosed ? 'Risposta rivelata' : 'Aperta'}</span>
-      </div>
-      <p class="q-text">"${q.text}"</p>
-      <div class="options">`;
+    html+=`<div class="q-card" style="animation-delay:${i*.04}s">
+      <div class="q-num">Domanda ${i+1} di ${QUESTIONS.length}</div>
+      <div class="q-text">"${q.text}"</div>
+      <div class="opts">`;
 
-    q.options.forEach(opt => {
-      const votes   = (state.votes && state.votes[opt]) || 0;
-      const pct     = totalVotes > 0 ? Math.round(votes / totalVotes * 100) : 0;
-      const isMyVote   = myVote === opt;
-      const isCorrect  = correct === opt;
-      const isWrong    = isClosed && isMyVote && !isCorrect;
+    q.options.forEach(opt=>{
+      const isMyVote  = myVote===opt;
+      const isCorrect = correct===opt;
+      const isWrong   = correct && isMyVote && !isCorrect;
+      const isCorUnvoted = correct && !myVote && isCorrect;
 
-      let cls = '';
-      if (isClosed && isCorrect) cls = 'correct';
-      else if (isClosed && isWrong) cls = 'wrong';
-      else if (!isClosed && isMyVote) cls = 'selected';
+      let cls='';
+      if(correct && isCorrect && isMyVote) cls='correct';
+      else if(correct && isCorrect) cls='correct-unvoted';
+      else if(isWrong) cls='wrong';
+      else if(!correct && isMyVote) cls='selected';
 
-      const disabled = myVote || isClosed ? 'disabled' : '';
-      const onclick  = (!myVote && !isClosed) ? `onclick="castVote('${q.id}','${opt.replace(/'/g,"\\'")}',this)"` : '';
+      const canVote = !myVote && !locked && !correct;
+      const onclick = canVote ? `onclick="castVote('${q.id}','${opt.replace(/'/g,"\\'")}')"` : '';
+      const disabled = !canVote ? 'disabled' : '';
 
-      html += `<button class="opt-btn ${cls}" ${disabled} ${onclick}>
-        <span>${opt}${isCorrect ? ' ✓' : ''}</span>
-        <span class="opt-right">
-          ${(myVote || isClosed) ? `<span class="bar-wrap"><span class="bar-fill" style="width:${pct}%"></span></span><span class="pct">${pct}%</span>` : ''}
-        </span>
+      const check = isMyVote && correct ? (isCorrect?'✓':'✗') : (isMyVote?'●':'');
+
+      html+=`<button class="opt ${cls}" ${disabled} ${onclick}>
+        <span>${opt}</span>
+        <span class="opt-check">${check}</span>
       </button>`;
     });
 
-    html += `</div>`;
-    if (myVote && !isClosed) html += `<p class="voted-msg">Risposta salvata! Il risultato arriverà dopo ✨</p>`;
-    if (isClosed && myVote === correct) html += `<div class="points-pill">🏆 +10 punti guadagnati!</div>`;
-    if (isClosed && myVote && myVote !== correct) html += `<div class="points-pill" style="background:#f5f5f5;border-color:#ddd;color:#999">Risposta errata — meglio alla prossima!</div>`;
-    html += `</div>`;
+    html+='</div>';
+
+    if(myVote && !correct) html+=`<p class="q-answered">✓ Hai risposto: "${myVote}"</p>`;
+    if(!myVote && !locked && !correct) html+=`<p class="q-locked-msg">Tocca un'opzione per rispondere</p>`;
+    if(correct && myVote===correct) html+=`<p class="q-answered" style="color:#6abf4b">✓ Risposta corretta! +10 punti</p>`;
+    if(correct && myVote && myVote!==correct) html+=`<p class="q-answered" style="color:var(--text3)">✗ Risposta errata</p>`;
+    if(correct && !myVote) html+=`<p class="q-locked-msg">Non hai risposto a questa domanda</p>`;
+
+    html+='</div>';
   });
 
-  // Domande bloccate
-  if (locked.length > 0) {
-    locked.sort((a,b) => a.time.localeCompare(b.time)).forEach(q => {
-      html += `<div class="q-locked">
-        <div class="q-locked-icon">🔒</div>
-        <div class="q-locked-text">
-          <p>Disponibile alle ore ${q.time}</p>
-          <span>"${q.text}"</span>
-        </div>
-      </div>`;
-    });
-  }
-
-  container.innerHTML = html;
+  c.innerHTML=html;
 }
 
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  VOTO
-// ════════════════════════════════════════════════
-function castVote(qid, option, btn) {
-  if (userVotes[qid]) return;
-  userVotes[qid] = option;
+// ══════════════════════════════════════════
+async function castVote(qid, option){
+  if(!currentUser) return;
+  if(userVotes[qid]) return;
+  if(isWeddingDayOrAfter()){ openModal('modal-locked'); return; }
 
-  // Salva voto su Firestore
-  db.collection('votes').add({ userId: currentUser.id, userName: currentUser.name, qid, option, votedAt: new Date() });
-
-  // Aggiorna conteggio nella domanda
-  const field = `votes.${option}`;
-  db.collection('questions').doc(qid).set(
-    { votes: { [option]: firebase.firestore.FieldValue.increment(1) } },
-    { merge: true }
-  );
-
+  userVotes[qid]=option;
   renderQuestions();
+
+  await db.collection('votes').add({ userId:currentUser.id, userName:currentUser.name, qid, option, votedAt:new Date() });
+  await db.collection('questions').doc(qid).set({ votes:{ [option]:firebase.firestore.FieldValue.increment(1) } },{ merge:true });
+  showToast('Risposta salvata ✓');
 }
 
-// ════════════════════════════════════════════════
-//  CLASSIFICA REALTIME
-// ════════════════════════════════════════════════
-function listenLeaderboard() {
-  db.collection('users').orderBy('pts','desc').onSnapshot(snap => {
-    allScores = [];
-    snap.forEach(doc => allScores.push({ id: doc.id, ...doc.data() }));
-    renderLeaderboard();
-    updateProfile();
-  });
-}
-
-function renderLeaderboard() {
-  const medals = ['🥇','🥈','🥉'];
-  const total  = QUESTIONS.length;
-  const lb     = document.getElementById('lb-list');
-  document.getElementById('lb-subtitle').textContent = `${allScores.length} invitati · ${total} domande`;
-
-  if (allScores.length === 0) {
-    lb.innerHTML = `<div class="empty-state"><div class="emoji">🏆</div><p>Nessun punteggio ancora…</p></div>`;
+// ══════════════════════════════════════════
+//  CLASSIFICA
+// ══════════════════════════════════════════
+function renderLeaderboard(){
+  const c = document.getElementById('lb-container');
+  if(!lbUnlocked){
+    c.innerHTML=`<div class="lb-locked">
+      <div class="icon">🔒</div>
+      <h3>Classifica non ancora disponibile</h3>
+      <p>La classifica sarà sbloccata dagli sposi al termine del matrimonio. Torna a controllare!</p>
+    </div>`;
     return;
   }
 
-  lb.innerHTML = allScores.map((u, i) => {
-    const isMe = u.id === currentUser.id;
-    const maxPts = allScores[0].pts || 1;
-    const barW = maxPts > 0 ? Math.round((u.pts / maxPts) * 100) : 0;
-    return `<div class="lb-row ${isMe ? 'me' : ''}">
-      ${i < 3 ? `<span class="lb-medal">${medals[i]}</span>` : `<span class="lb-rank">${i+1}°</span>`}
-      <div class="lb-info" style="margin-left:${i<3?'0':'8px'}">
-        <div class="lb-name">${u.name}${isMe ? '<span class="you">tu</span>' : ''}</div>
-        <div class="lb-sub">${u.correct||0} risposte corrette${u.table ? ' · '+u.table : ''}</div>
-        <div class="lb-bar"><div class="lb-bar-fill" style="width:${barW}%"></div></div>
-      </div>
-      <span class="lb-pts">${u.pts||0}</span>
+  const active = allUsers.filter(u=>u.pts!==undefined);
+  if(active.length===0){ c.innerHTML='<p style="text-align:center;color:var(--text3);padding:2rem;font-style:italic">Nessun punteggio ancora</p>'; return; }
+
+  const medals=['🥇','🥈','🥉'];
+  let html='';
+
+  // 1° posto — grande con corona
+  if(active[0]){
+    const u=active[0];
+    const isMe=u.id===currentUser?.id;
+    html+=`<div class="lb-winner ${isMe?'me':''}">
+      <span class="crown">👑</span>
+      <div class="name">${u.name}${isMe?' <span class="you-tag">tu</span>':''}</div>
+      <div class="pts">${u.pts}</div>
+      <div class="sub">${u.correct||0} risposte corrette</div>
     </div>`;
-  }).join('');
+  }
+
+  // 2° e 3° posto — podio
+  const podium = active.slice(1,3);
+  if(podium.length>0){
+    html+=`<div class="lb-podium">`;
+    podium.forEach((u,i)=>{
+      const isMe=u.id===currentUser?.id;
+      html+=`<div class="lb-pod ${isMe?'me':''}">
+        <div class="medal">${medals[i+1]}</div>
+        <div class="pod-name">${u.name}${isMe?' ★':''}</div>
+        <div class="pod-pts">${u.pts}</div>
+        <div class="pod-sub">${u.correct||0} corrette</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Dal 4° posto in poi — lista normale
+  if(active.length>3){
+    html+=`<div class="lb-list">`;
+    active.slice(3).forEach((u,i)=>{
+      const isMe=u.id===currentUser?.id;
+      html+=`<div class="lb-row ${isMe?'me':''}">
+        <span class="lb-rank">${i+4}°</span>
+        <div class="lb-info">
+          <div class="lb-name">${u.name}${isMe?'<span class="you-tag">tu</span>':''}</div>
+          <div class="lb-sub">${u.correct||0} risposte corrette</div>
+        </div>
+        <span class="lb-pts">${u.pts}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  c.innerHTML=html;
 }
 
-function updateProfile() {
-  const me = allScores.find(u => u.id === currentUser.id);
-  if (!me) return;
-  const rank = allScores.findIndex(u => u.id === currentUser.id) + 1;
-  document.getElementById('stat-pts').textContent = me.pts || 0;
-  document.getElementById('stat-correct').textContent = `${me.correct||0}/${QUESTIONS.length}`;
-  document.getElementById('stat-rank').textContent = `#${rank}`;
+// ══════════════════════════════════════════
+//  PROFILO
+// ══════════════════════════════════════════
+function updateProfileUI(){
+  if(!currentUser) return;
+  const initials = currentUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('header-avatar').textContent=initials;
+  document.getElementById('prof-avatar').textContent=initials;
+  document.getElementById('prof-name').textContent=currentUser.name;
+  document.getElementById('edit-name').value=currentUser.name;
+  updateProfileStats();
 }
 
-// ════════════════════════════════════════════════
-//  NAVIGAZIONE
-// ════════════════════════════════════════════════
-function showPage(name, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
+function updateProfileStats(){
+  if(!currentUser) return;
+  const me = allUsers.find(u=>u.id===currentUser.id);
+  const rank = allUsers.findIndex(u=>u.id===currentUser.id)+1;
+  document.getElementById('s-pts').textContent=me?.pts||0;
+  document.getElementById('s-ok').textContent=`${me?.correct||0}/${QUESTIONS.length}`;
+  document.getElementById('s-rank').textContent=rank>0?`#${rank}`:'#—';
+}
+
+async function saveName(){
+  const name = document.getElementById('edit-name').value.trim();
+  if(!name){ showToast('Inserisci un nome valido'); return; }
+  currentUser.name=name;
+  localStorage.setItem('fm_user',JSON.stringify(currentUser));
+  await db.collection('users').doc(currentUser.id).update({ name });
+  updateProfileUI();
+  showToast('Nome aggiornato ✓');
+}
+
+function doLogout(){
+  if(!confirm('Vuoi uscire e cambiare account?')) return;
+  localStorage.removeItem('fm_user');
+  localStorage.removeItem('fm_device_id');
+  location.reload();
+}
+
+// ══════════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════════
+function showPage(name, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
   btn.classList.add('active');
+  if(name==='classifica') renderLeaderboard();
+  if(name==='profilo') updateProfileUI();
 }
 
-// ════════════════════════════════════════════════
-//  NOTIFICHE — OneSignal
-//  App ID: 70bae416-3c11-4b7a-b5ba-92cc9d47ab1e
-// ════════════════════════════════════════════════
-const ONESIGNAL_APP_ID = '70bae416-3c11-4b7a-b5ba-92cc9d47ab1e';
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
-// Inizializza OneSignal
-window.OneSignalDeferred.push(async function(OneSignal) {
-  await OneSignal.init({
-    appId: ONESIGNAL_APP_ID,
-    safari_web_id: 'web.onesignal.auto.' + ONESIGNAL_APP_ID,
-    notifyButton: { enable: false },
-    allowLocalhostAsSecureOrigin: true,
-  });
-
-  notifEnabled = OneSignal.Notifications.permission;
-  updateToggleUI();
-  updateNotifBanner();
-
-  // Quando l'utente si iscrive, salva il player ID su Firestore
-  OneSignal.User.PushSubscription.addEventListener('change', async () => {
-    const playerId = OneSignal.User.PushSubscription.id;
-    if (playerId && currentUser) {
-      await db.collection('users').doc(currentUser.id).update({
-        osPlayerId: playerId,
-        notifEnabled: true
-      });
-      notifEnabled = true;
-      updateToggleUI();
-      updateNotifBanner();
-    }
-  });
-});
-
-function updateNotifBanner() {
-  const area = document.getElementById('notif-area');
-  if (!area) return;
-  if (!notifEnabled) {
-    area.innerHTML = `<div class="notif-banner warn">
-      <div class="notif-dot warn"></div>
-      <p><strong>Attiva le notifiche</strong> per ricevere un avviso quando arriva una nuova domanda!</p>
-      <button onclick="requestNotif()" style="flex-shrink:0;margin-left:auto;background:var(--gold);color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:'Jost',sans-serif">Attiva</button>
-    </div>`;
-  } else {
-    area.innerHTML = `<div class="notif-banner">
-      <div class="notif-dot"></div>
-      <p><strong>Notifiche attive</strong> — ti avviseremo ad ogni nuova domanda</p>
-    </div>`;
-    setTimeout(() => { area.innerHTML = ''; }, 4000);
-  }
-}
-
-function checkNotifPermission() {
-  updateNotifBanner();
-}
-
-function requestNotif() {
-  window.OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.Notifications.requestPermission();
-    notifEnabled = OneSignal.Notifications.permission;
-    updateToggleUI();
-    updateNotifBanner();
-  });
-}
-
-function toggleNotif() {
-  if (!notifEnabled) requestNotif();
-}
-
-function updateToggleUI() {
-  const t = document.getElementById('notif-toggle');
-  if (t) {
-    if (notifEnabled) t.classList.remove('off'); else t.classList.add('off');
-  }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
 }
 </script>
 </body>
