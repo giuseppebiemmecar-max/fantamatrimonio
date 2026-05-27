@@ -235,12 +235,27 @@
       <span>Fantamatrimonio</span>
     </div>
     <div class="header-user">
-      <div class="avatar" id="header-avatar" onclick="showPage('profilo',document.querySelectorAll('.nav-btn')[2])">?</div>
+      <div class="avatar" id="header-avatar" onclick="showPage('profilo',document.querySelectorAll('.nav-btn')[3])">?</div>
     </div>
   </header>
 
+  <!-- HOME / COUNTDOWN -->
+  <div class="page active" id="page-home">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:1rem">
+      <div style="font-size:40px;margin-bottom:1rem;animation:pulse 2s ease-in-out infinite">💍</div>
+      <div style="font-family:'Cinzel',serif;font-size:clamp(22px,6vw,32px);font-weight:700;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:2px;line-height:1.1;margin-bottom:6px">Giuseppe &amp; Sofia</div>
+      <div style="font-size:12px;letter-spacing:3px;color:var(--text3);margin-bottom:2rem">20 · VI · 2026</div>
+      <div id="app-countdown"></div>
+      <div id="app-wedding-msg" style="display:none" class="wedding-day-banner" style="margin-top:1.5rem">
+        <div class="emoji">💒</div>
+        <h2>È il grande giorno!</h2>
+        <p>Le risposte sono state bloccate.<br>Attendi la classifica finale!</p>
+      </div>
+    </div>
+  </div>
+
   <!-- DOMANDE -->
-  <div class="page active" id="page-domande">
+  <div class="page" id="page-domande">
     <div class="page-title">Le domande</div>
     <div id="questions-container"></div>
   </div>
@@ -277,7 +292,8 @@
   </div>
 
   <nav class="bottom-nav">
-    <button class="nav-btn active" onclick="showPage('domande',this)"><span class="nav-icon">📋</span>Domande</button>
+    <button class="nav-btn active" onclick="showPage('home',this)"><span class="nav-icon">🏠</span>Home</button>
+    <button class="nav-btn" onclick="showPage('domande',this)"><span class="nav-icon">📋</span>Domande</button>
     <button class="nav-btn" onclick="showPage('classifica',this)"><span class="nav-icon">🏆</span>Classifica</button>
     <button class="nav-btn" onclick="showPage('profilo',this)"><span class="nav-icon">👤</span>Profilo</button>
   </nav>
@@ -305,7 +321,6 @@ const firebaseConfig = {
   storageBucket: "frantamatrimonio.firebasestorage.app",
   messagingSenderId: "225931901296",
   appId: "1:225931901296:web:05cb2996263bbb5dce77b5"
-
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -357,8 +372,34 @@ let lbUnlocked  = false;
 })();
 
 // ══════════════════════════════════════════
-//  COUNTDOWN
+//  COUNTDOWN (splash + interno all'app)
 // ══════════════════════════════════════════
+function updateAppCountdown(){
+  const el = document.getElementById('app-countdown');
+  const msg = document.getElementById('app-wedding-msg');
+  if(!el) return;
+  const now  = new Date();
+  const diff = WEDDING - now;
+  if(diff <= 0){
+    el.style.display='none';
+    if(msg) msg.style.display='block';
+    return;
+  }
+  const d = Math.floor(diff/(1000*60*60*24));
+  const h = Math.floor((diff%(1000*60*60*24))/(1000*60*60));
+  const m = Math.floor((diff%(1000*60*60))/(1000*60));
+  const s = Math.floor((diff%(1000*60))/1000);
+  el.innerHTML = `<div class="countdown-wrap">
+    <div class="cd-box"><span class="cd-num">${String(d).padStart(2,'0')}</span><span class="cd-label">Giorni</span></div>
+    <span class="cd-sep">·</span>
+    <div class="cd-box"><span class="cd-num">${String(h).padStart(2,'0')}</span><span class="cd-label">Ore</span></div>
+    <span class="cd-sep">·</span>
+    <div class="cd-box"><span class="cd-num">${String(m).padStart(2,'0')}</span><span class="cd-label">Min</span></div>
+    <span class="cd-sep">·</span>
+    <div class="cd-box"><span class="cd-num">${String(s).padStart(2,'0')}</span><span class="cd-label">Sec</span></div>
+  </div>`;
+}
+
 function updateCountdown(){
   const now  = new Date();
   const diff = WEDDING - now;
@@ -445,7 +486,8 @@ async function doRegister(){
 window.addEventListener('load', async ()=>{
   // Aggiorna countdown ogni secondo
   updateCountdown();
-  setInterval(updateCountdown, 1000);
+  updateAppCountdown();
+  setInterval(()=>{ updateCountdown(); updateAppCountdown(); }, 1000);
 
   // Genera particelle
   const saved = localStorage.getItem('fm_user');
